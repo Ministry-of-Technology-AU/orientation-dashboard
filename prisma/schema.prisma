@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  student
+  buddy
+  admin
+}
+
+enum ModuleStatus {
+  not_started
+  in_progress
+  completed
+}
+
+enum GameType {
+  quiz
+  wordle
+  connections
+}
+
+enum GameDifficulty {
+  easy
+  moderate
+  hard
+}
+
+enum ClubType {
+  club
+  society
+  ministry
+}
+
+enum SwipeAction {
+  liked
+  dismissed
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String
+  avatarUrl      String?   @map("avatar_url") @db.Text
+  batchYear      Int?      @map("batch_year")
+  role           Role      @default(student)
+  totalPoints    Int       @default(0) @map("total_points")
+  onboardingDone Boolean   @default(false) @map("onboarding_done")
+  buddyId        String?   @map("buddy_id")
+  darkMode       Boolean   @default(false) @map("dark_mode")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  buddy              User?                  @relation("BuddyRelation", fields: [buddyId], references: [id])
+  assignedStudents   User[]                 @relation("BuddyRelation")
+  interests          UserInterest[]
+  moduleProgress     UserModuleProgress[]
+  gameCompletions    UserGameCompletion[]
+  clubSwipes         UserClubSwipe[]
+  chatSessions       ChatSession[]
+  timeSessions       TimeSession[]
+  mascotDismissals   MascotDismissal[]
+
+  @@map("users")
+}
+
+model Interest {
+  id       String         @id @default(uuid())
+  label    String         @unique
+  category String
+  emoji    String
+
+  userInterests UserInterest[]
+  @@map("interests")
+}
+
+model UserInterest {
+  userId     String @map("user_id")
+  interestId String @map("interest_id")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([userId, interestId])
+  @@map("user_interests")
+}
+
+model Module {
+  id               String   @id @default(uuid())
+  title            String
+  slug             String   @unique
+  description      String   @db.Text
+  bannerImageUrl   String?  @map("banner_image_url") @db.Text
+  contentMdx       String?  @map("content_mdx") @db.LongText
+  iconName         String?  @map("icon_name")
+  isMandatory      Boolean  @default(false) @map("is_mandatory")
+  orderIndex       Int      @map("order_index")
+  journeyMilestone String?  @map("journey_milestone")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  games           Game[]
+  moduleProgress  UserModuleProgress[]
+  timeSessions    TimeSession[]
+  gameCompletions UserGameCompletion[]
+
+  @@map("modules")
+}
+
+model Game {
+  id            String         @id @default(uuid())
+  moduleId      String         @map("module_id")
+  title         String
+  type          GameType
+  difficulty    GameDifficulty
+  pointsValue   Int            @map("points_value")
+  estimatedMins Int            @map("estimated_mins")
+  config        Json
+  orderIndex    Int            @map("order_index")
+
+  module          Module               @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  gameCompletions UserGameCompletion[]
+
+  @@map("games")
+}
+
+model UserModuleProgress {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  moduleId      String       @map("module_id")
+  status        ModuleStatus @default(not_started)
+  readPercent   Int          @default(0) @map("read_percent")
+  timeSpentMins Int          @default(0) @map("time_spent_mins")
+  gamesUnlocked Boolean      @default(false) @map("games_unlocked")
+  allGamesDone  Boolean      @default(false) @map("all_games_done")
+  completedAt   DateTime?    @map("completed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@map("user_module_progress")
+}
+
+model UserGameCompletion {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  gameId       String   @map("game_id")
+  moduleId     String   @map("module_id")
+  score        Int
+  pointsEarned Int      @map("points_earned")
+  attempts     Int      @default(1)
+  completedAt  DateTime @default(now()) @map("completed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@map("user_game_completions")
+}
+
+model Club {
+  id            String   @id @default(uuid())
+  name          String
+  type          ClubType
+  description   String   @db.Text
+  coverImageUrl String?  @map("cover_image_url") @db.Text
+  interestTags  Json     @map("interest_tags")
+  contactEmail  String   @map("contact_email")
+  instagramUrl  String?  @map("instagram_url") @db.Text
+  isActive      Boolean  @default(true) @map("is_active")
+
+  swipes UserClubSwipe[]
+
+  @@map("clubs")
+}
+
+model UserClubSwipe {
+  userId   String      @map("user_id")
+  clubId   String      @map("club_id")
+  action   SwipeAction
+  swipedAt DateTime    @default(now()) @map("swiped_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@id([userId, clubId])
+  @@map("user_club_swipes")
+}
+
+model FaqDocument {
+  id        String   @id @default(uuid())
+  title     String
+  category  String
+  content   String   @db.LongText
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("faq_documents")
+}
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  messages  Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_sessions")
+}
+
+model TimeSession {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  date         DateTime @db.Date
+  durationMins Int      @map("duration_mins")
+  moduleId     String?  @map("module_id")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  @@map("time_sessions")
+}
+
+model MascotDismissal {
+  userId      String   @map("user_id")
+  triggerKey  String   @map("trigger_key")
+  dismissedAt DateTime @default(now()) @map("dismissed_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, triggerKey])
+  @@map("mascot_dismissals")
+}
