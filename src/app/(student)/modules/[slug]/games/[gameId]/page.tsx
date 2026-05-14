@@ -26,7 +26,7 @@ export default function GamePage({
       {/* Back */}
       <Link
         href={`/modules/${slug}`}
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#0A3864] transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary-blue transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to {module.title}

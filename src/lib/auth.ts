@@ -1,19 +1,43 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
-    session({ session, user }) {
-      session.user.id = user.id;
+    async signIn({ user }) {
+      const email = user.email ?? "";
+      return email.endsWith("@ashoka.edu.in") && (email.includes("_ug2026") || email.includes("_ug25"));
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        const dbUser = await prisma.user.upsert({
+          where: { email: user.email! },
+          update: { name: user.name ?? "", avatarUrl: user.image ?? null },
+          create: {
+            email: user.email!,
+            name: user.name ?? "",
+            avatarUrl: user.image ?? null,
+            role: "student",
+          },
+        });
+        token.id = dbUser.id;
+        token.role = dbUser.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.user.id = token.id as string;
+      session.user.role = token.role as string;
       return session;
     },
   },

@@ -104,7 +104,7 @@ export const mockFaqItems: FaqItem[] = [
     category: "Campus Life",
     question: "How do I join a club or society?",
     answer:
-      "Clubs and societies hold recruitment drives during the Club and Socs Fair in the first two weeks of semester. You can also discover clubs through the Orientation Hub's Explore page and express interest directly. Most clubs have open membership with no formal try-out.",
+      "Clubs and societies hold recruitment drives during the Club and Socs Fair in the first two weeks of semester. You can also discover clubs through the Orientation Dashboard's Explore page and express interest directly. Most clubs have open membership with no formal try-out.",
   },
   {
     id: "c2",
@@ -118,7 +118,7 @@ export const mockFaqItems: FaqItem[] = [
     category: "Campus Life",
     question: "Is there a shuttle service between campus and the city?",
     answer:
-      "Yes, Ashoka runs a scheduled shuttle between campus and key points in Delhi/NCR. The schedule and booking system are available on the Shuttle App — set it up via the Orientation Hub. Seats must be reserved in advance.",
+      "Yes, Ashoka runs a scheduled shuttle between campus and key points in Delhi/NCR. The schedule and booking system are available on the Shuttle App — set it up via the Orientation Dashboard. Seats must be reserved in advance.",
   },
   {
     id: "c4",

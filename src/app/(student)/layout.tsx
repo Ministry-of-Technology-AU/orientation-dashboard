@@ -1,11 +1,17 @@
 import { Sidebar } from "@/components/sidebar";
+import { TourProvider } from "@/components/guided-tour";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-[#f5f5f3] overflow-hidden">
+    <TourProvider
+      autoStart
+      ranOnce
+      storageKey="orientation-hub-tour-v1"
+    >
+    <div className="flex h-screen overflow-hidden">
       {/* Floating collapsed sidebar */}
       <div className="m-3 mr-0 shrink-0">
-        <div className="bg-[#e6edf5] rounded-2xl h-full w-[60px] flex flex-col">
+        <div className="bg-blue-tint/80 backdrop-blur-sm rounded-2xl h-full w-15 flex flex-col">
           <Sidebar />
         </div>
       </div>
@@ -15,5 +21,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         {children}
       </div>
     </div>
+    </TourProvider>
   );
 }

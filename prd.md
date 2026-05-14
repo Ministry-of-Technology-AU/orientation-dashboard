@@ -1,4 +1,4 @@
-# Orientation Hub — Product Requirements Document
+# Orientation Dashboard — Product Requirements Document
 
 **Version:** 1.1  
 **Date:** May 2026  
