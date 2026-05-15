@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart } from "lucide-react";
+import { Heart, Search } from "lucide-react";
+import Link from "next/link";
 import type { Club } from "@/mock-data/clubs";
 import {
   mockUserInterestTags,
   getRecommendedClubs,
-  getLikedClubs,
-  getExploreAllClubs,
-  getTierClubs
 } from "@/mock-data/clubs";
-import { ClubCarousel } from "@/components/explore/club-carousel";
 import { ClubDetailPanel } from "@/components/explore/club-detail-panel";
 
 // Pre-like a couple of clubs so "Liked by You" isn't empty on first load
@@ -21,211 +18,159 @@ const INITIAL_SWIPES: Record<string, "liked" | "dismissed"> = {
 };
 
 const cardVariants = {
-  initial: { scale: 0.95, opacity: 0, y: 10 },
+  initial: { scale: 0.95, opacity: 0, y: 20 },
   animate: { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 },
   exit: (dir: 'left' | 'right' | null) => {
-    if (dir === 'left') return { x: -200, opacity: 0, rotate: -15, scale: 0.9 };
-    if (dir === 'right') return { x: 200, opacity: 0, rotate: 15, scale: 0.9 };
+    if (dir === 'left') return { x: -300, opacity: 0, rotate: -20, scale: 0.9 };
+    if (dir === 'right') return { x: 300, opacity: 0, rotate: 20, scale: 0.9 };
     return { scale: 0.95, opacity: 0, x: 0, y: 0, rotate: 0 };
   }
 };
 
 export default function ExplorePage() {
   const [swipes, setSwipes] = useState<Record<string, "liked" | "dismissed">>(INITIAL_SWIPES);
-  const [selected, setSelected] = useState<Club | null>(null);
   
   // Animation states
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
   const [flyingHeart, setFlyingHeart] = useState<number>(0);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const stored = localStorage.getItem("club_swipes");
+    if (stored) {
+      try {
+        setSwipes(JSON.parse(stored));
+      } catch (e) {}
+    }
+  }, []);
+
+  // Save swipes whenever they change
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("club_swipes", JSON.stringify(swipes));
+    }
+  }, [swipes, isClient]);
 
   const recommended = getRecommendedClubs(mockUserInterestTags, swipes);
-  const liked = getLikedClubs(swipes);
-  
-  const tier4 = getTierClubs(swipes, 4);
-  const tier3 = getTierClubs(swipes, 3);
-  const tier2 = getTierClubs(swipes, 2);
-  const tier1 = getTierClubs(swipes, 1);
-  
-  const exploreAll = getExploreAllClubs(swipes, mockUserInterestTags);
-
-  function handleSelect(club: Club) {
-    setDirection(null);
-    setFlyingHeart(0);
-    setSelected((prev) => (prev?.id === club.id ? null : club));
-  }
-
-  function advanceToNext(id: string) {
-    const listSequence = [recommended, tier4, tier3, tier2, tier1, exploreAll];
-    
-    // Liked list logic (if user is just browsing their liked clubs)
-    if (liked.some(c => c.id === id)) {
-      const idx = liked.findIndex(c => c.id === id);
-      if (idx !== -1 && idx + 1 < liked.length) {
-        setSelected(liked[idx + 1]);
-      } else {
-        setSelected(null);
-      }
-      return;
-    }
-
-    // Progression logic through categories
-    let currentListIdx = -1;
-    for (let i = 0; i < listSequence.length; i++) {
-      if (listSequence[i].some(c => c.id === id)) {
-        currentListIdx = i;
-        break;
-      }
-    }
-
-    if (currentListIdx !== -1) {
-      const currentList = listSequence[currentListIdx];
-      const idx = currentList.findIndex(c => c.id === id);
-      
-      // Try next in current list
-      if (idx !== -1 && idx + 1 < currentList.length) {
-        setSelected(currentList[idx + 1]);
-        return;
-      }
-      
-      // Exhausted current list, find the next available list
-      for (let i = currentListIdx + 1; i < listSequence.length; i++) {
-        if (listSequence[i].length > 0) {
-          setSelected(listSequence[i][0]);
-          return;
-        }
-      }
-    }
-
-    setSelected(null);
-  }
+  const currentClub = recommended.length > 0 ? recommended[0] : null;
 
   function handleLike(id: string) {
     setDirection('right');
     setFlyingHeart(Date.now());
-    advanceToNext(id);
-    setSwipes((s) => ({ ...s, [id]: "liked" }));
+    setTimeout(() => {
+      setSwipes((s) => ({ ...s, [id]: "liked" }));
+    }, 150); // slight delay so animation starts before unmounting
   }
 
   function handleDismiss(id: string) {
     setDirection('left');
-    advanceToNext(id);
-    setSwipes((s) => ({ ...s, [id]: "dismissed" }));
+    setTimeout(() => {
+      setSwipes((s) => ({ ...s, [id]: "dismissed" }));
+    }, 150);
   }
 
-  function handleUnlike(id: string) {
-    setSwipes((s) => {
-      const next = { ...s };
-      delete next[id];
-      return next;
-    });
-  }
-
-  const isLiked = selected ? swipes[selected.id] === "liked" : false;
+  if (!isClient) return null;
 
   return (
-    <div className="flex flex-1 overflow-hidden min-w-0 bg-neutral/40">
-      {/* ── Left: scrollable sections ── */}
-      <motion.main layout className="flex-1 overflow-y-auto px-6 py-6 min-w-0">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          Explore in and around Ashoka
+    <div className="flex flex-col h-full w-full bg-neutral-50 overflow-hidden relative font-sans">
+      
+      {/* Top Navigation */}
+      <header className="flex-shrink-0 flex items-center justify-between px-6 py-5 z-10 relative">
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900">
+          Discover
         </h1>
+        <Link 
+          href="/likes" 
+          className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-neutral-200 text-sm font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-200 hover:shadow-md transition-all active:scale-95"
+        >
+          <Heart className="w-4 h-4 fill-rose-600" />
+          View your likes
+        </Link>
+      </header>
 
-        {/* Recommended */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Recommended</h2>
-          <ClubCarousel clubs={recommended} selectedId={selected?.id ?? null} onSelect={handleSelect} />
-        </section>
-
-        {/* Liked by you */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Liked by you</h2>
-          <ClubCarousel clubs={liked} selectedId={selected?.id ?? null} onSelect={handleSelect} />
-        </section>
-
-        {/* Tier 4 */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Tier 4 Organizations</h2>
-          <ClubCarousel clubs={tier4} selectedId={selected?.id ?? null} swipes={swipes} onSelect={handleSelect} />
-        </section>
-
-        {/* Tier 3 */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Tier 3 Organizations</h2>
-          <ClubCarousel clubs={tier3} selectedId={selected?.id ?? null} swipes={swipes} onSelect={handleSelect} />
-        </section>
-
-        {/* Tier 2 */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Tier 2 Organizations</h2>
-          <ClubCarousel clubs={tier2} selectedId={selected?.id ?? null} swipes={swipes} onSelect={handleSelect} />
-        </section>
-
-        {/* Tier 1 */}
-        <section className="mb-8">
-          <h2 className="text-base font-semibold text-gray-800 mb-3">Tier 1 Organizations</h2>
-          <ClubCarousel clubs={tier1} selectedId={selected?.id ?? null} swipes={swipes} onSelect={handleSelect} />
-        </section>
-
-        {/* Explore all (fallback) */}
-        {exploreAll.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-base font-semibold text-gray-800 mb-3">Explore all</h2>
-            <ClubCarousel clubs={exploreAll} selectedId={selected?.id ?? null} swipes={swipes} onSelect={handleSelect} />
-          </section>
-        )}
-      </motion.main>
-
-      {/* ── Right: conditionally rendered club detail panel ── */}
-      <AnimatePresence initial={false}>
-        {selected && (
-          <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 340, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="shrink-0 h-full flex items-center mr-20 overflow-hidden" 
-          >
-            <div className="bg-[#e6edf5] rounded-2xl h-[92%] my-auto p-5 flex flex-col w-[320px] mx-auto shadow-sm border border-blue-100 relative overflow-hidden">
-              <AnimatePresence mode="popLayout" custom={direction}>
-                <motion.div
-                  key={selected.id}
-                  custom={direction}
-                  variants={cardVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                  className="flex flex-col h-full origin-bottom"
+      {/* Main Card Area */}
+      <main className="flex-1 flex flex-col items-center justify-center relative px-4 w-full max-w-md mx-auto">
+        <AnimatePresence mode="popLayout" custom={direction}>
+          {currentClub ? (
+            <motion.div
+              key={currentClub.id}
+              custom={direction}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="w-full aspect-[3/4] max-h-[75vh] bg-white rounded-3xl shadow-xl shadow-neutral-200/50 border border-neutral-100 flex flex-col overflow-hidden relative origin-bottom z-10"
+            >
+              <ClubDetailPanel
+                club={currentClub}
+                isLiked={false}
+                onLike={handleLike}
+                onDismiss={handleDismiss}
+                onUnlike={() => {}}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="end-state"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center text-center p-8 z-10"
+            >
+              <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Search className="w-8 h-8 text-neutral-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-neutral-900 mb-2">That's all we had for now!</h2>
+              <p className="text-neutral-500 mb-8 max-w-[260px]">
+                You've seen all our recommendations based on your interests.
+              </p>
+              
+              <div className="flex flex-col gap-3 w-full">
+                <Link 
+                  href="/likes"
+                  className="w-full flex items-center justify-center gap-2 bg-rose-600 text-white font-bold py-4 rounded-2xl hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-600/20 transition-all active:scale-95"
                 >
-                  <ClubDetailPanel
-                    club={selected}
-                    isLiked={isLiked}
-                    onLike={handleLike}
-                    onDismiss={handleDismiss}
-                    onUnlike={handleUnlike}
-                  />
-                </motion.div>
-              </AnimatePresence>
+                  <Heart className="w-5 h-5 fill-current" />
+                  Go to your Likes
+                </Link>
+                <Link 
+                  href="/catalogue"
+                  className="w-full flex items-center justify-center gap-2 bg-white text-neutral-700 font-bold py-4 rounded-2xl border-2 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-all active:scale-95"
+                >
+                  View Full Catalogue
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              {/* Flying Heart Animation */}
-              <AnimatePresence>
-                {flyingHeart > 0 && (
-                  <motion.div
-                    key={flyingHeart}
-                    initial={{ opacity: 0, scale: 0.5, y: 0 }}
-                    animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 2], y: -200 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    onAnimationComplete={() => setFlyingHeart(0)}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-rose-500 z-50"
-                  >
-                    <Heart className="w-24 h-24 fill-current drop-shadow-xl" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+        {/* Flying Heart Animation */}
+        <AnimatePresence>
+          {flyingHeart > 0 && (
+            <motion.div
+              key={flyingHeart}
+              initial={{ opacity: 0, scale: 0.5, y: 0 }}
+              animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 2.5], y: -300 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              onAnimationComplete={() => setFlyingHeart(0)}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-rose-500 z-50"
+            >
+              <Heart className="w-32 h-32 fill-current drop-shadow-2xl" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* Bottom Navigation */}
+      <footer className="flex-shrink-0 flex items-center justify-center py-6 px-6 z-10">
+        <Link 
+          href="/catalogue"
+          className="text-sm font-semibold text-neutral-500 hover:text-neutral-900 transition-colors underline decoration-neutral-300 underline-offset-4"
+        >
+          View full catalogue
+        </Link>
+      </footer>
     </div>
   );
 }
