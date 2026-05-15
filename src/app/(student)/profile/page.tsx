@@ -8,12 +8,30 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
+  /*
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: { interests: { include: { interest: true } } },
   });
 
   if (!user) redirect("/login");
+  */
+
+  // Mock user data for now
+  const user = {
+    id: session.user.id,
+    name: session.user.name || "Test Student",
+    email: session.user.email || "student@ashoka.edu.in",
+    avatarUrl: session.user.image || null,
+    batchYear: 2026,
+    totalPoints: 1250,
+    onboardingDone: true,
+    interests: [
+      { interest: { id: "1", label: "Technology", emoji: "💻" } },
+      { interest: { id: "2", label: "Design", emoji: "🎨" } },
+      { interest: { id: "3", label: "Entrepreneurship", emoji: "🚀" } },
+    ],
+  };
 
   const initials = user.name
     .split(" ")

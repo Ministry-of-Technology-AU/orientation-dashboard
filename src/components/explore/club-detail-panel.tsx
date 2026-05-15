@@ -2,7 +2,7 @@ import { X, Heart, ExternalLink, Mail } from "lucide-react";
 import type { Club } from "@/mock-data/clubs";
 
 interface Props {
-  club: Club | null;
+  club: Club;
   isLiked: boolean;
   onDismiss: (id: string) => void;
   onLike: (id: string) => void;
@@ -10,23 +10,15 @@ interface Props {
 }
 
 export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: Props) {
-  if (!club) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 gap-2">
-        <p className="text-sm text-gray-400">Select a club to see details</p>
-      </div>
-    );
-  }
-
   const paragraphs = club.description.split("\n").filter(Boolean);
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       {/* Cover image */}
       <div className="w-full aspect-[4/3] bg-gray-200 rounded-2xl shrink-0 mb-4" />
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 pr-2 flex flex-col items-center text-center">
         <h2 className="text-xl font-bold text-gray-900 mb-3">{club.name}</h2>
         <div className="flex flex-col gap-3 mb-4">
           {paragraphs.map((p, i) => (
@@ -35,7 +27,7 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
         </div>
 
         {/* Links */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <a
             href={`mailto:${club.contactEmail}`}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#0A3864] transition-colors"
@@ -58,23 +50,23 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 pt-3 shrink-0 border-t border-gray-100">
+      <div className="flex gap-3 pt-4 shrink-0 border-t border-gray-200/50 mt-2">
         <button
           onClick={() => onDismiss(club.id)}
-          className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl py-3 text-sm font-medium transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 rounded-xl py-3 text-sm font-medium transition-colors shadow-sm"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
         <button
-          onClick={() => (isLiked ? onUnlike(club.id) : onLike(club.id))}
-          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-200 text-gray-600 rounded-2xl py-3 text-sm font-medium transition-colors"
+          onClick={() => isLiked ? onUnlike(club.id) : onLike(club.id)}
+          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-200 text-gray-600 rounded-xl py-3 text-sm font-medium transition-colors shadow-sm"
         >
           <Heart
-            className="w-4 h-4 transition-colors"
+            className="w-5 h-5 transition-colors"
             style={{ color: isLiked ? "#A61017" : undefined, fill: isLiked ? "#A61017" : "none" }}
           />
         </button>
       </div>
-    </div>
+    </>
   );
 }

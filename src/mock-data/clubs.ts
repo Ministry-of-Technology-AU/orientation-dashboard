@@ -1,6 +1,7 @@
 export type ClubType = "club" | "society" | "ministry";
 
 export interface Club {
+  tier: 1 | 2 | 3 | 4;
   id: string;
   name: string;
   type: ClubType;
@@ -22,6 +23,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/ashodrama",
     interestTags: ["Arts", "Theatre", "Social"],
     isActive: true,
+    tier: 2,
   },
   {
     id: "c2",
@@ -32,6 +34,7 @@ export const mockClubs: Club[] = [
     contactEmail: "debate@ashoka.edu.in",
     interestTags: ["Social", "Politics", "Law"],
     isActive: true,
+    tier: 3,
   },
   {
     id: "c3",
@@ -43,6 +46,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/ashoka.lens",
     interestTags: ["Arts", "Photography", "Social"],
     isActive: true,
+    tier: 4,
   },
   {
     id: "c4",
@@ -54,6 +58,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/techcircle.ashoka",
     interestTags: ["Tech", "Programming", "Entrepreneurship"],
     isActive: true,
+    tier: 1,
   },
   {
     id: "c5",
@@ -65,6 +70,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/ashoka.music",
     interestTags: ["Arts", "Music", "Social"],
     isActive: true,
+    tier: 2,
   },
   {
     id: "c6",
@@ -75,6 +81,7 @@ export const mockClubs: Club[] = [
     contactEmail: "envaction@ashoka.edu.in",
     interestTags: ["Environment", "Social", "Sciences"],
     isActive: true,
+    tier: 3,
   },
   {
     id: "c7",
@@ -86,6 +93,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/ashokamun",
     interestTags: ["Politics", "Social", "Law"],
     isActive: true,
+    tier: 4,
   },
   {
     id: "c8",
@@ -97,6 +105,7 @@ export const mockClubs: Club[] = [
     instagramUrl: "https://instagram.com/ashoka.dance",
     interestTags: ["Arts", "Dance", "Social"],
     isActive: true,
+    tier: 1,
   },
   {
     id: "c9",
@@ -107,6 +116,7 @@ export const mockClubs: Club[] = [
     contactEmail: "ecell@ashoka.edu.in",
     interestTags: ["Entrepreneurship", "Tech", "Social"],
     isActive: true,
+    tier: 2,
   },
   {
     id: "c10",
@@ -117,6 +127,7 @@ export const mockClubs: Club[] = [
     contactEmail: "litso@ashoka.edu.in",
     interestTags: ["Arts", "Writing", "Social"],
     isActive: true,
+    tier: 3,
   },
   {
     id: "c11",
@@ -127,6 +138,7 @@ export const mockClubs: Club[] = [
     contactEmail: "sports@ashoka.edu.in",
     interestTags: ["Sports", "Social"],
     isActive: true,
+    tier: 4,
   },
   {
     id: "c12",
@@ -137,6 +149,7 @@ export const mockClubs: Club[] = [
     contactEmail: "sga@ashoka.edu.in",
     interestTags: ["Politics", "Social", "Law"],
     isActive: true,
+    tier: 1,
   },
 ];
 
@@ -160,4 +173,8 @@ export function getLikedClubs(swipes: Record<string, "liked" | "dismissed">): Cl
 export function getExploreAllClubs(swipes: Record<string, "liked" | "dismissed">, userTags: string[]): Club[] {
   const recommended = new Set(getRecommendedClubs(userTags, swipes).map((c) => c.id));
   return mockClubs.filter((c) => c.isActive && !swipes[c.id] && !recommended.has(c.id));
+}
+
+export function getTierClubs(swipes: Record<string, "liked" | "dismissed">, tier: number): Club[] {
+  return mockClubs.filter((c) => c.isActive && c.tier === tier);
 }

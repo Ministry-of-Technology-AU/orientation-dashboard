@@ -16,10 +16,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user }) {
       const email = user.email ?? "";
-      return email.endsWith("@ashoka.edu.in") && (email.includes("_ug2026") || email.includes("_ug25"));
+      return email.endsWith("@ashoka.edu.in") && (email.includes("_ug2026") || email.includes("_ug25") || email.includes("_ug2023"));
     },
     async jwt({ token, user }) {
       if (user) {
+        /*
         const dbUser = await prisma.user.upsert({
           where: { email: user.email! },
           update: { name: user.name ?? "", avatarUrl: user.image ?? null },
@@ -32,6 +33,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         token.id = dbUser.id;
         token.role = dbUser.role;
+        */
+        
+        // Mocking user data for now to bypass database connection
+        token.id = user.id || "mock-user-id";
+        token.role = "student";
       }
       return token;
     },
