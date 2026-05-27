@@ -1,6 +1,20 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
+
+// Comma-separated list of emails explicitly granted access (set AUTH_ALLOWED_EMAILS in env)
+const ALLOWED_EMAILS = (process.env.AUTH_ALLOWED_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAllowedEmail(email: string): boolean {
+  const e = email.toLowerCase();
+  if (ALLOWED_EMAILS.includes(e)) return true;
+  return (
+    e.endsWith("@ashoka.edu.in") &&
+    (e.includes("_ug2026") || e.includes("_ug25") || e.includes("_ug2023"))
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -15,8 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user }) {
-      const email = user.email ?? "";
-      return email.endsWith("@ashoka.edu.in") && (email.includes("_ug2026") || email.includes("_ug25") || email.includes("_ug2023"));
+      return isAllowedEmail(user.email ?? "");
     },
     async jwt({ token, user }) {
       if (user) {
