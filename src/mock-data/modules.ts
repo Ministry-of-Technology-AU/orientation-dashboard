@@ -285,7 +285,7 @@ export const mockModules: MockModule[] = [
     readPercent: 0,
     games: [
       {
-        id: "g9",
+        id: "g-it-quiz",
         title: "Quiz Yourself!",
         type: "quiz",
         difficulty: "easy",
@@ -294,53 +294,58 @@ export const mockModules: MockModule[] = [
         config: {
           questions: [
             {
-              q: "How many devices can a student register on the Ashoka Wi-Fi network?",
+              q: "What is the format of an Ashoka student email ID?",
+              options: [
+                "FirstName_LastName@ashoka.edu.in",
+                "FirstName.LastName_<ProgramCode><yy>@ashoka.edu.in",
+                "StudentID@ashoka.edu.in",
+                "LastName.FirstName@ashoka.edu.in",
+              ],
+              answer: "FirstName.LastName_<ProgramCode><yy>@ashoka.edu.in",
+            },
+            {
+              q: "What is the maximum number of devices a student can register on the Ashoka Wi-Fi network?",
               options: ["1", "2", "3", "4"],
               answer: "2",
             },
             {
-              q: "Where do you lodge an IT service request at Ashoka?",
-              options: ["MyAshoka portal", "CollPoll website/app", "AMS portal", "Email to IT helpdesk"],
+              q: "Where should you first log an IT service request?",
+              options: ["Email to IT helpdesk", "Walk-in to Academic Block 02", "CollPoll website/app", "MyAshoka portal"],
               answer: "CollPoll website/app",
             },
             {
-              q: "Where is the IT Help Desk physically located on campus?",
-              options: ["Ground Floor, AC01", "1st Floor, Dining Block", "2nd Floor, Academic Block 02", "Sports Complex"],
-              answer: "2nd Floor, Academic Block 02",
+              q: "Three uses of the smart card student ID are dining kiosks, hostel attendance, and ___",
+              options: ["Library borrowing", "Gate entry/exit", "Shuttle booking", "Gym access"],
+              answer: "Gate entry/exit",
             },
             {
-              q: "For how long can a standby laptop be borrowed while yours is being repaired?",
-              options: ["3 days", "5 days", "1 week", "2 weeks"],
-              answer: "1 week",
-            },
-            {
-              q: "What happens to your Ashoka email ID after graduation?",
+              q: "What happens to a student's Ashoka email ID one month after graduation?",
               options: [
                 "It stays active permanently",
-                "It is deleted immediately on graduation day",
-                "It is deleted one month after graduation and converted to an alumni email",
-                "It is archived for 5 years",
+                "It is converted to an alumni email ID",
+                "It is archived with read-only access",
+                "It is forwarded to personal email",
               ],
-              answer: "It is deleted one month after graduation and converted to an alumni email",
+              answer: "It is converted to an alumni email ID",
             },
           ],
         } satisfies QuizConfig,
       },
       {
-        id: "g10",
+        id: "g-it-wordle",
         title: "Play Wordle",
         type: "wordle",
         difficulty: "easy",
         pointsValue: 30,
         estimatedMins: 5,
         config: {
-          word: "LOGIN",
+          word: "EMAIL",
           maxAttempts: 6,
-          hint: "What you do with your Ashoka email ID and password to access MyAshoka and AMS",
+          hint: "Your primary communication channel at Ashoka — format: FirstName.LastName_UG26@ashoka.edu.in",
         } satisfies WordleConfig,
       },
       {
-        id: "g11",
+        id: "g-it-connections",
         title: "Play Connections",
         type: "connections",
         difficulty: "moderate",
@@ -348,10 +353,10 @@ export const mockModules: MockModule[] = [
         estimatedMins: 8,
         config: {
           groups: [
-            { label: "IT Portals & Apps", color: "yellow", items: ["MyAshoka", "AMS", "CollPoll", "mLibrary"] },
-            { label: "IT Services Offered", color: "green", items: ["Wi-Fi setup", "Smart card config", "AV support", "Standby laptop"] },
-            { label: "IT Escalation — Infrastructure", color: "blue", items: ["Wi-Fi issues", "Hardware", "Computer labs", "Classroom AV"] },
-            { label: "IT Escalation — Systems", color: "purple", items: ["Web applications", "MyAshoka portal", "LMS", "Dining kiosks"] },
+            { label: "Key Portals", color: "yellow", items: ["MyAshoka", "AMS", "CollPoll", "elibrary.ashoka.edu.in"] },
+            { label: "Smart Card Uses", color: "green", items: ["Dining kiosks", "Gate entry/exit", "Hostel attendance", "Student ID"] },
+            { label: "IT Infrastructure Issues", color: "blue", items: ["Wi-Fi problems", "Hardware faults", "Computer lab issues", "Classroom AV"] },
+            { label: "IT Systems Issues", color: "purple", items: ["Web applications", "MyAshoka portal", "LMS access", "Mobile apps"] },
           ],
         } satisfies ConnectionsConfig,
       },

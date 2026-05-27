@@ -26,20 +26,20 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
         }}
       >
         {/* Subtle noise/texture overlay could go here */}
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-900/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-neutral-950 via-neutral-900/60 to-transparent" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col h-full w-full justify-end p-6 pb-28">
         <div className="flex gap-2 flex-wrap mb-3">
           {club.interestTags.slice(0, 3).map((tag) => (
-            <span key={tag} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white/90 text-xs font-semibold tracking-wide uppercase">
+            <span key={tag} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white/90 text-[10px] font-bold tracking-[0.15em] uppercase">
               {tag}
             </span>
           ))}
         </div>
 
-        <h2 className="text-4xl font-black text-white mb-2 tracking-tight leading-none drop-shadow-md">
+        <h2 className="text-4xl font-bold text-white mb-2 leading-none drop-shadow-md" style={{ fontFamily: "var(--font-display)" }}>
           {club.name}
         </h2>
         
@@ -65,7 +65,7 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
         </div>
 
         {/* Scrollable Description inside the card */}
-        <div className="overflow-y-auto max-h-[160px] pr-3 custom-scrollbar mb-2 space-y-3">
+        <div className="overflow-y-auto max-h-40 pr-3 custom-scrollbar mb-2 space-y-3">
           {paragraphs.map((p, i) => (
             <p key={i} className="text-sm text-white/80 leading-relaxed font-medium">
               {p}
@@ -84,7 +84,7 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
         </button>
         <button
           onClick={() => isLiked ? onUnlike(club.id) : onLike(club.id)}
-          className="w-16 h-16 flex items-center justify-center bg-rose-500 hover:bg-rose-400 border border-rose-400 text-white rounded-full transition-all active:scale-90 shadow-xl shadow-rose-500/30"
+          className="w-16 h-16 flex items-center justify-center bg-primary-red hover:bg-primary-red/85 border border-primary-red/80 text-white rounded-full transition-all active:scale-90 shadow-xl shadow-primary-red/30"
         >
           <Heart
             className="w-8 h-8"

@@ -73,18 +73,21 @@ export default function ExplorePage() {
   if (!isClient) return null;
 
   return (
-    <div className="flex flex-col h-full w-full bg-neutral-50 overflow-hidden relative font-sans">
-      
+    <div className="flex flex-col h-full w-full overflow-hidden relative">
+
       {/* Top Navigation */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 py-5 z-10 relative">
-        <h1 className="text-2xl font-black tracking-tight text-neutral-900">
+      <header className="shrink-0 flex items-center justify-between px-6 py-5 z-10 relative">
+        <h1
+          className="text-2xl font-bold text-primary-blue"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
           Discover
         </h1>
-        <Link 
-          href="/likes" 
-          className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-neutral-200 text-sm font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-200 hover:shadow-md transition-all active:scale-95"
+        <Link
+          href="/likes"
+          className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-primary-blue/10 text-sm font-bold text-primary-red hover:bg-red-tint hover:border-primary-red/20 hover:shadow-md transition-all active:scale-95"
         >
-          <Heart className="w-4 h-4 fill-rose-600" />
+          <Heart className="w-4 h-4 fill-primary-red" />
           View your likes
         </Link>
       </header>
@@ -101,7 +104,7 @@ export default function ExplorePage() {
               animate="animate"
               exit="exit"
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="w-full aspect-[3/4] max-h-[75vh] bg-white rounded-3xl shadow-xl shadow-neutral-200/50 border border-neutral-100 flex flex-col overflow-hidden relative origin-bottom z-10"
+              className="w-full aspect-3/4 max-h-[75vh] bg-white rounded-3xl shadow-xl shadow-primary-blue/8 border border-primary-blue/8 flex flex-col overflow-hidden relative origin-bottom z-10"
             >
               <ClubDetailPanel
                 club={currentClub}
@@ -118,25 +121,30 @@ export default function ExplorePage() {
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center justify-center text-center p-8 z-10"
             >
-              <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <Search className="w-8 h-8 text-neutral-400" />
+              <div className="w-20 h-20 bg-blue-tint rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <Search className="w-8 h-8 text-primary-blue/30" />
               </div>
-              <h2 className="text-2xl font-bold text-neutral-900 mb-2">That's all we had for now!</h2>
-              <p className="text-neutral-500 mb-8 max-w-[260px]">
+              <h2
+                className="text-2xl font-bold text-primary-blue mb-2"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                That's all we had for now!
+              </h2>
+              <p className="text-primary-blue/50 mb-8 max-w-65">
                 You've seen all our recommendations based on your interests.
               </p>
-              
+
               <div className="flex flex-col gap-3 w-full">
-                <Link 
+                <Link
                   href="/likes"
-                  className="w-full flex items-center justify-center gap-2 bg-rose-600 text-white font-bold py-4 rounded-2xl hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-600/20 transition-all active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 bg-primary-red text-white font-bold py-4 rounded-2xl hover:bg-primary-red/90 hover:shadow-lg hover:shadow-primary-red/20 transition-all active:scale-95"
                 >
                   <Heart className="w-5 h-5 fill-current" />
                   Go to your Likes
                 </Link>
-                <Link 
+                <Link
                   href="/catalogue"
-                  className="w-full flex items-center justify-center gap-2 bg-white text-neutral-700 font-bold py-4 rounded-2xl border-2 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 transition-all active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 bg-white text-primary-blue font-bold py-4 rounded-2xl border-2 border-primary-blue/15 hover:border-primary-blue/25 hover:bg-blue-tint transition-all active:scale-95"
                 >
                   View Full Catalogue
                 </Link>
@@ -154,7 +162,7 @@ export default function ExplorePage() {
               animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 2.5], y: -300 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
               onAnimationComplete={() => setFlyingHeart(0)}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-rose-500 z-50"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-primary-red z-50"
             >
               <Heart className="w-32 h-32 fill-current drop-shadow-2xl" />
             </motion.div>
@@ -163,10 +171,10 @@ export default function ExplorePage() {
       </main>
 
       {/* Bottom Navigation */}
-      <footer className="flex-shrink-0 flex items-center justify-center py-6 px-6 z-10">
-        <Link 
+      <footer className="shrink-0 flex items-center justify-center py-6 px-6 z-10">
+        <Link
           href="/catalogue"
-          className="text-sm font-semibold text-neutral-500 hover:text-neutral-900 transition-colors underline decoration-neutral-300 underline-offset-4"
+          className="text-sm font-semibold text-primary-blue/40 hover:text-primary-blue transition-colors underline decoration-primary-blue/20 underline-offset-4"
         >
           View full catalogue
         </Link>
