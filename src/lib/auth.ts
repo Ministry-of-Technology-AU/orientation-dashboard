@@ -31,32 +31,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       return isAllowedEmail(user.email ?? "");
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        /*
-        const dbUser = await prisma.user.upsert({
-          where: { email: user.email! },
-          update: { name: user.name ?? "", avatarUrl: user.image ?? null },
-          create: {
-            email: user.email!,
-            name: user.name ?? "",
-            avatarUrl: user.image ?? null,
-            role: "student",
-          },
-        });
-        token.id = dbUser.id;
-        token.role = dbUser.role;
-        */
-        
-        // Mocking user data for now to bypass database connection
         token.id = user.id || "mock-user-id";
         token.role = "student";
+      }
+      // Capture the Google ID token on first sign-in (account is only present then)
+      if (account?.id_token) {
+        token.googleIdToken = account.id_token;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id as string;
       session.user.role = token.role as string;
+      // Expose the ID token for server-side use in API routes
+      session.googleIdToken = token.googleIdToken as string | undefined;
       return session;
     },
   },
