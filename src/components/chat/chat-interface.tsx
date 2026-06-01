@@ -37,13 +37,13 @@ export function ChatInterface({ conversationId, onConversationCreated }: Props) 
     fetch(`/api/conversations/${conversationId}`)
       .then((r) => r.json())
       .then((data) => {
-        const msgs: Message[] = (data.messages ?? []).map(
-          (m: { id: number; role: "user" | "assistant"; content: string }) => ({
+        const msgs: Message[] = (data.messages ?? [])
+          .sort((a: { id: number }, b: { id: number }) => a.id - b.id)
+          .map((m: { id: number; role: "user" | "assistant"; content: string }) => ({
             id: String(m.id),
             role: m.role,
             content: m.content,
-          })
-        );
+          }));
         setMessages(msgs);
       })
       .catch(() => {})
@@ -59,22 +59,15 @@ export function ChatInterface({ conversationId, onConversationCreated }: Props) 
     if (!text || thinking) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setThinking(true);
-
-    // Send last 6 messages (before this one) as context — bounded to 3 exchanges
-    const recentMessages = messages.slice(-6).map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, conversationId, recentMessages }),
+        body: JSON.stringify({ message: text, conversationId }),
       });
 
       const data = await res.json();

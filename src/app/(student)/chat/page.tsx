@@ -28,21 +28,21 @@ export default function ChatPage() {
   const [tab, setTab] = useState<Tab>("chat");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
+  const [loadingConvs, setLoadingConvs] = useState(true);
 
   useEffect(() => {
     fetch("/api/conversations")
       .then((r) => r.json())
       .then((data: Conversation[]) => {
         if (!Array.isArray(data)) return;
-        // Most recent first
-        const sorted = [...data].sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        setConversations(
+          [...data].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
         );
-        setConversations(sorted);
-        // Auto-select the most recent conversation
-        if (sorted.length > 0) setActiveConvId(sorted[0].id);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingConvs(false));
   }, []);
 
   function handleNewChat() {
@@ -88,59 +88,71 @@ export default function ChatPage() {
       </div>
 
       {tab === "chat" ? (
-        <div className="flex flex-1 overflow-hidden">
-          {/* Conversation sidebar */}
-          <div className="w-48 border-r border-primary-blue/8 flex flex-col shrink-0">
-            <div className="p-2.5 border-b border-primary-blue/8">
-              <button
-                onClick={handleNewChat}
-                className={cn(
-                  "w-full flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors",
-                  activeConvId === null
-                    ? "bg-blue-tint text-primary-blue"
-                    : "text-primary-blue/50 hover:bg-blue-tint/60 hover:text-primary-blue"
-                )}
-              >
-                <Plus className="w-3.5 h-3.5 shrink-0" />
-                New chat
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-1">
-              {conversations.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => setActiveConvId(conv.id)}
-                  className={cn(
-                    "w-full text-left px-3 py-2.5 transition-colors",
-                    activeConvId === conv.id
-                      ? "bg-blue-tint"
-                      : "hover:bg-blue-tint/40"
-                  )}
-                >
-                  <p
-                    className={cn(
-                      "text-xs font-medium truncate leading-snug",
-                      activeConvId === conv.id ? "text-primary-blue" : "text-primary-blue/70"
-                    )}
-                  >
-                    {conv.title}
-                  </p>
-                  <p className="text-[10px] text-primary-blue/35 mt-0.5">
-                    {formatDate(conv.created_at)}
-                  </p>
-                </button>
+        loadingConvs ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-primary-blue/20 animate-bounce"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
               ))}
             </div>
           </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden">
+            {/* Conversation sidebar */}
+            <div className="w-48 border-r border-primary-blue/8 flex flex-col shrink-0">
+              <div className="p-2.5 border-b border-primary-blue/8">
+                <button
+                  onClick={handleNewChat}
+                  className={cn(
+                    "w-full flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors",
+                    activeConvId === null
+                      ? "bg-blue-tint text-primary-blue"
+                      : "text-primary-blue/50 hover:bg-blue-tint/60 hover:text-primary-blue"
+                  )}
+                >
+                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                  New chat
+                </button>
+              </div>
 
-          {/* Chat area — key forces remount on conversation switch */}
-          <ChatInterface
-            key={activeConvId ?? "new"}
-            conversationId={activeConvId}
-            onConversationCreated={handleConversationCreated}
-          />
-        </div>
+              <div className="flex-1 overflow-y-auto py-1">
+                {conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => setActiveConvId(conv.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-2.5 transition-colors",
+                      activeConvId === conv.id ? "bg-blue-tint" : "hover:bg-blue-tint/40"
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        "text-xs font-medium truncate leading-snug",
+                        activeConvId === conv.id ? "text-primary-blue" : "text-primary-blue/70"
+                      )}
+                    >
+                      {conv.title}
+                    </p>
+                    <p className="text-[10px] text-primary-blue/35 mt-0.5">
+                      {formatDate(conv.created_at)}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chat area — key forces remount on conversation switch */}
+            <ChatInterface
+              key={activeConvId ?? "new"}
+              conversationId={activeConvId}
+              onConversationCreated={handleConversationCreated}
+            />
+          </div>
+        )
       ) : (
         <div className="flex-1 overflow-y-auto py-4">
           <FaqSection />
