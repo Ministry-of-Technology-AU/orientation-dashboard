@@ -433,6 +433,36 @@ export const TourProvider: React.FC<TourProviderProps> = ({
   >([]);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
+  const [isSplashActive, setIsSplashActive] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (window.location.pathname !== "/home") return false;
+    if ((window as any).__welcomeSplashDismissed) return false;
+    return true;
+  });
+
+  useEffect(() => {
+    if (!isSplashActive) return;
+
+    if ((window as any).__welcomeSplashDismissed) {
+      setIsSplashActive(false);
+      return;
+    }
+
+    const handleDismiss = () => setIsSplashActive(false);
+    window.addEventListener("welcomeSplashDismissed", handleDismiss);
+
+    const interval = setInterval(() => {
+      if ((window as any).__welcomeSplashDismissed) {
+        setIsSplashActive(false);
+      }
+    }, 150);
+
+    return () => {
+      window.removeEventListener("welcomeSplashDismissed", handleDismiss);
+      clearInterval(interval);
+    };
+  }, [isSplashActive]);
+
   const registerStep = useCallback(
     (stepConfig: TourStepConfig, element: HTMLElement) => {
       setSteps((prev) => {
@@ -545,7 +575,7 @@ const nextStep = () => {
 
   // --- Core logic to handle autoStart and step changes ---
   useEffect(() => {
-    if (autoStart && !hasAutoStarted && steps.size > 0 && shouldStart) {
+    if (autoStart && !hasAutoStarted && steps.size > 0 && shouldStart && !isSplashActive) {
       const tourCompleted = ranOnce
         ? localStorage.getItem(storageKey) === "true"
         : false;
@@ -565,6 +595,7 @@ const nextStep = () => {
     ranOnce,
     storageKey,
     shouldStart,
+    isSplashActive,
     startTour,
   ]);
 

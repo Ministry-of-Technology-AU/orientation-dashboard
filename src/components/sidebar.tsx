@@ -7,6 +7,8 @@ import { Home, LayoutDashboard, BookOpen, HelpCircle, Calendar, Compass, User, L
 import { cn } from "@/lib/utils";
 import { TourStep } from "@/components/guided-tour";
 import { handleSignOut } from "@/app/actions";
+import { useWebHaptics } from "web-haptics/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
   {
@@ -69,6 +71,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const haptic = useWebHaptics();
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -89,7 +92,13 @@ export function Sidebar() {
         className="mb-4"
       >
         <div ref={ref} className="relative">
-          <button onClick={() => setOpen((v) => !v)} title="Profile">
+          <button
+            onClick={() => {
+              haptic.trigger("light");
+              setOpen((v) => !v);
+            }}
+            title="Profile"
+          >
             <div className={cn(
               "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
               pathname === "/profile" || open
@@ -100,28 +109,40 @@ export function Sidebar() {
             </div>
           </button>
 
-          {open && (
-            <div className="absolute left-full top-0 ml-3 z-50 bg-white rounded-xl shadow-lg border border-primary-blue/8 py-1.5 w-40 overflow-hidden">
-              <Link
-                href="/profile"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-blue hover:bg-primary-blue/5 transition-colors"
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, x: -6 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95, x: -6 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute left-full top-0 ml-3 z-50 bg-white rounded-xl shadow-lg border border-primary-blue/8 py-1.5 w-40 overflow-hidden"
               >
-                <User className="w-3.5 h-3.5 text-primary-blue/50" />
-                My Profile
-              </Link>
-              <div className="my-1 h-px bg-primary-blue/6" />
-              <form action={handleSignOut}>
-                <button
-                  type="submit"
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-red hover:bg-primary-red/5 transition-colors"
+                <Link
+                  href="/profile"
+                  onClick={() => {
+                    haptic.trigger("selection");
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-blue hover:bg-primary-blue/5 transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Sign out
-                </button>
-              </form>
-            </div>
-          )}
+                  <User className="w-3.5 h-3.5 text-primary-blue/50" />
+                  My Profile
+                </Link>
+                <div className="my-1 h-px bg-primary-blue/6" />
+                <form action={handleSignOut}>
+                  <button
+                    type="submit"
+                    onClick={() => haptic.trigger("medium")}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-red hover:bg-primary-red/5 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign out
+                  </button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </TourStep>
 
@@ -140,13 +161,21 @@ export function Sidebar() {
               <Link
                 href={href}
                 title={label}
+                onClick={() => haptic.trigger("selection")}
                 className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative z-0",
                   isActive
-                    ? "bg-primary-red text-white shadow-sm"
+                    ? "text-white shadow-sm"
                     : "text-primary-blue/50 hover:bg-primary-blue/10 hover:text-primary-blue"
                 )}
               >
+                {isActive && (
+                  <motion.span
+                    layoutId="activeSidebarTab"
+                    className="absolute inset-0 bg-primary-red rounded-xl -z-10"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
                 <Icon className="w-4.5 h-4.5" />
               </Link>
             </TourStep>
