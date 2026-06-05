@@ -9,13 +9,11 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  /*
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
-  */
 
-  const isOnboarded = false; // user?.isOnboarded ?? false;
+  const isOnboarded = user?.isOnboarded ?? false;
 
   return <HomePageClient isOnboarded={isOnboarded} />;
 }

@@ -11,7 +11,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
   }
 
   // Ensure user exists in database and fetch flags
-  /*
   let dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
@@ -25,13 +24,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
       },
     });
   }
-  */
-  const dbUser = {
-    isTourComplete: false,
-    isOnboarded: false,
-    name: session.user.name || "Ashokan Student",
-    email: session.user.email || "",
-  };
 
   return (
     <TourProvider

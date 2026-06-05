@@ -138,11 +138,11 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
 
   const [selectedId, setSelectedId] = useState(GUIDES[0].id);
   const [visible, setVisible] = useState(true);
-  const [completedIds, setCompletedIds] = useState<Set<string>>(loadCompleted);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const prevId = useRef(selectedId);
 
-  // Splash state initialized based on DB isOnboarded status
-  const [phase, setPhase] = useState<Phase>(!isOnboarded ? "splash" : "done");
+  // Splash state — fallback to DB prop initially to avoid hydration mismatch
+  const [phase, setPhase] = useState<Phase>(isOnboarded ? "done" : "splash");
   const [canContinue, setCanContinue] = useState(false);
 
   // Ref for the mobile tab bar — auto-scroll active tab into view
@@ -184,6 +184,50 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
     return () => clearTimeout(readTimer);
   }, [phase]);
 
+  // Load client-only values after hydration to prevent hydration mismatches
+  useEffect(() => {
+    setCompletedIds(loadCompleted());
+    if (!isOnboarded) {
+      try {
+        if (localStorage.getItem("orientation-hub-onboarded") === "true") {
+          setPhase("done");
+        }
+      } catch {}
+    }
+  }, [isOnboarded]);
+
+  // Cache isOnboarded flag to localStorage so future page loads skip the preloader instantly
+  useEffect(() => {
+    if (isOnboarded) {
+      try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch {}
+    }
+  }, [isOnboarded]);
+
+  // On mount: sync any pending onboarding answers from the questionnaire to the DB
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("onboarding_answers");
+      if (!raw) return;
+      const answers: Record<string, string | string[]> = JSON.parse(raw);
+
+      const petName    = typeof answers.name      === "string" ? answers.name      : undefined;
+      const city       = typeof answers.city      === "string" ? answers.city      : undefined;
+      const phoneNumber = typeof answers.phone    === "string" ? answers.phone     : undefined;
+      const interests  = {
+        question1: Array.isArray(answers.interests) ? answers.interests : [],
+        question2: Array.isArray(answers.hobbies)   ? answers.hobbies   : [],
+      };
+
+      fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ petName, city, phoneNumber, interests, isOnboarded: true }),
+      })
+        .then(res => res.ok && localStorage.removeItem("onboarding_answers"))
+        .catch(err => console.error("Failed to sync onboarding answers:", err));
+    } catch {}
+  }, []);
+
   // Signal to the guided tour provider when the welcome splash is fully dismissed / done
   useEffect(() => {
     if (phase === "done") {
@@ -207,7 +251,10 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
     haptic.trigger("medium");
     setPhase("settling");
 
-    // Save flag state to DB
+    // Cache locally so future visits skip the preloader instantly
+    try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch {}
+
+    // Save flag state to DB (+ timestamp via server)
     fetch("/api/user", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

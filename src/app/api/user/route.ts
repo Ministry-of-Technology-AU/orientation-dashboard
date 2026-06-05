@@ -32,7 +32,7 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber } = body;
+    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber, interests } = body;
 
     const updateData: any = {};
     if (typeof isOnboarded === "boolean") updateData.isOnboarded = isOnboarded;
@@ -41,9 +41,16 @@ export async function PATCH(req: Request) {
     if (typeof petName === "string") updateData.petName = petName;
     if (typeof city === "string") updateData.city = city;
     if (typeof phoneNumber === "string") updateData.phoneNumber = phoneNumber;
+    // interests is a JSON object: { question1: string[], question2: string[] }
+    if (interests !== undefined && interests !== null) updateData.interests = interests;
 
-    // Set onboardedOn timestamp if onboarding is completed
-    if (isOnboarded === true) {
+    // Set onboardedOn timestamp if onboarding is completed for the first time
+    const existingUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isOnboarded: true },
+    });
+
+    if (isOnboarded === true && (!existingUser || !existingUser.isOnboarded)) {
       updateData.onboardedOn = new Date();
     }
 

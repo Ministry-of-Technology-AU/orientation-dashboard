@@ -437,7 +437,16 @@ export const TourProvider: React.FC<TourProviderProps> = ({
   >([]);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
-  const [isSplashActive, setIsSplashActive] = useState(!initialOnboarded);
+  // If the DB or localStorage says user is onboarded, splash is not active
+  const [isSplashActive, setIsSplashActive] = useState(() => {
+    if (initialOnboarded) return false;
+    try {
+      if (typeof window !== "undefined" && localStorage.getItem("orientation-hub-onboarded") === "true") {
+        return false;
+      }
+    } catch {}
+    return true;
+  });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -463,6 +472,15 @@ export const TourProvider: React.FC<TourProviderProps> = ({
       clearInterval(interval);
     };
   }, [isSplashActive]);
+
+  // Seed localStorage flags from DB values on first mount so future page loads are instant
+  useEffect(() => {
+    try {
+      if (initialOnboarded) localStorage.setItem("orientation-hub-onboarded", "true");
+      if (initialTourComplete) localStorage.setItem(storageKey, "true");
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const registerStep = useCallback(
     (stepConfig: TourStepConfig, element: HTMLElement) => {
@@ -529,7 +547,7 @@ const unregisterStep = useCallback((id: string) => {
         window.dispatchEvent(
           new CustomEvent("tourCompleted", { detail: { storageKey } })
         );
-      } else if (!completed && onTourSkip) {
+      } else {
         if (ranOnce) {
           localStorage.setItem(storageKey, "true");
           // Save to database (skip marks it complete to prevent re-opening)
@@ -539,7 +557,9 @@ const unregisterStep = useCallback((id: string) => {
             body: JSON.stringify({ isTourComplete: true }),
           }).catch((err) => console.error("Error saving tour completion on skip:", err));
         }
-        onTourSkip();
+        if (onTourSkip) {
+          onTourSkip();
+        }
       }
     }
   };

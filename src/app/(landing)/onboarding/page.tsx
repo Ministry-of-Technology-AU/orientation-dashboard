@@ -52,6 +52,9 @@ const QUESTIONS = [
 
 type Answers = Record<string, string | string[]>;
 
+const LS_ANSWERS_KEY = "onboarding_answers";
+const LS_ONBOARDED_KEY = "orientation-hub-onboarded";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -76,7 +79,11 @@ export default function OnboardingPage() {
   }
 
   function setCurrentValue(val: string | string[]) {
-    setAnswers(prev => ({ ...prev, [question.id]: val }));
+    setAnswers(prev => {
+      const next = { ...prev, [question.id]: val };
+      try { localStorage.setItem(LS_ANSWERS_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
   }
 
   function canAdvance() {
@@ -87,9 +94,15 @@ export default function OnboardingPage() {
 
   function advance() {
     if (!canAdvance()) return;
+    // Persist the latest answer before advancing
+    const latestAnswers = { ...answers, [question.id]: getCurrentValue() };
+    try { localStorage.setItem(LS_ANSWERS_KEY, JSON.stringify(latestAnswers)); } catch {}
+
     setAnimPhase("exit");
     setTimeout(() => {
       if (isLast) {
+        // Mark onboarding done locally so the home page can skip the preloader instantly
+        try { localStorage.setItem(LS_ONBOARDED_KEY, "true"); } catch {}
         router.push("/login");
       } else {
         setStep(s => s + 1);
