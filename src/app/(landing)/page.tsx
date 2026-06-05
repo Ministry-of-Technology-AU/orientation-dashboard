@@ -116,7 +116,7 @@ export default function LandingPage() {
       </div>
 
       {/* Headline copy */}
-      <div className="relative flex flex-col items-center px-6 sm:px-12 pt-40 sm:pt-48 text-center">
+      <div className="relative flex flex-col items-center px-6 sm:px-12 sm:pt-48 text-center landing-headline-container">
         <h1
           className="text-3xl sm:text-5xl font-bold text-primary-blue leading-[1.2] max-w-xs sm:max-w-2xl"
           style={{ fontFamily: "var(--font-display)" }}
@@ -143,7 +143,7 @@ export default function LandingPage() {
 
       {/* Bottom section — desktop */}
       <div
-        className="hidden sm:flex absolute bottom-0 inset-x-0 items-end justify-center gap-10 transition-all duration-700"
+        className="hidden sm:flex absolute bottom-0 inset-x-0 items-end justify-center gap-6 lg:gap-10 transition-all duration-700"
         style={{
           opacity: showBottom ? 1 : 0,
           transform: showBottom ? "translateY(0)" : "translateY(28px)",
@@ -156,11 +156,11 @@ export default function LandingPage() {
             width={420}
             height={580}
             priority
-            className="w-full max-w-105 h-auto object-contain"
+            className="w-full max-w-105 h-auto object-contain desktop-mascot-image"
           />
         </div>
 
-        <div className="mb-50 flex flex-col items-start gap-3">
+        <div className="flex flex-col items-start gap-3 desktop-details-container">
           <div className="relative bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-lg border border-gray-100 whitespace-nowrap">
             <p className="text-xs font-semibold text-primary-blue leading-snug">
               Hi! I&apos;m Bijlee ⚡ — ready to explore?
@@ -179,13 +179,13 @@ export default function LandingPage() {
 
       {/* Bottom section — mobile */}
       <div
-        className="sm:hidden absolute bottom-20 inset-x-0 flex flex-col items-center transition-all duration-700"
+        className="sm:hidden absolute inset-x-0 flex flex-col items-center transition-all duration-700 mobile-mascot-container"
         style={{
           opacity: showBottom ? 1 : 0,
           transform: showBottom ? "translateY(0)" : "translateY(28px)",
         }}
       >
-        <div className="flex flex-col items-center gap-3 mb-4">
+        <div className="flex flex-col items-center gap-2 mb-2">
           <div className="relative bg-white rounded-2xl px-4 py-2.5 shadow-lg border border-gray-100 whitespace-nowrap">
             <p className="text-xs font-semibold text-primary-blue">
               Hi! I&apos;m Bijlee ⚡ — ready to explore?
@@ -205,10 +205,30 @@ export default function LandingPage() {
           alt="Bijlee the mascot"
           width={200}
           height={260}
-          className="object-contain"
+          className="object-contain mobile-mascot-image"
           style={{ width: 200, height: "auto" }}
         />
       </div>
+
+      <style>{`
+        .mobile-mascot-container {
+          bottom: clamp(0.5rem, 2vh, 4rem);
+        }
+        .mobile-mascot-image {
+          max-height: clamp(120px, 20vh, 240px);
+          width: auto !important;
+        }
+        .desktop-mascot-image {
+          max-height: clamp(200px, 45vh, 480px);
+          width: auto !important;
+        }
+        .desktop-details-container {
+          margin-bottom: clamp(1.5rem, 10vh, 8rem);
+        }
+        .landing-headline-container {
+          padding-top: clamp(2.5rem, 8vh, 8rem);
+        }
+      `}</style>
 
     </div>
   );

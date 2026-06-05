@@ -6,191 +6,104 @@ datasource db {
   provider = "mysql"
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 enum Role {
   student
   buddy
   admin
 }
 
-enum ModuleStatus {
-  not_started
-  in_progress
-  completed
-}
-
-enum GameType {
-  quiz
-  wordle
-  connections
-}
-
-enum GameDifficulty {
-  easy
-  moderate
-  hard
-}
-
-enum ClubType {
-  club
-  society
-  ministry
-}
-
-enum SwipeAction {
-  liked
-  dismissed
-}
+// ─── Core Models ─────────────────────────────────────────────────────────────
 
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  name           String
-  avatarUrl      String?   @map("avatar_url") @db.Text
-  batchYear      Int?      @map("batch_year")
-  role           Role      @default(student)
-  totalPoints    Int       @default(0) @map("total_points")
-  onboardingDone Boolean   @default(false) @map("onboarding_done")
-  buddyId        String?   @map("buddy_id")
-  darkMode       Boolean   @default(false) @map("dark_mode")
-  createdAt      DateTime  @default(now()) @map("created_at")
+  id          String  @id @default(uuid())
+  name        String
+  email       String  @unique
+  petName     String? @map("pet_name")
+  city        String?
+  phoneNumber String? @map("phone_number")
 
-  buddy              User?                  @relation("BuddyRelation", fields: [buddyId], references: [id])
-  assignedStudents   User[]                 @relation("BuddyRelation")
-  interests          UserInterest[]
-  moduleProgress     UserModuleProgress[]
-  gameCompletions    UserGameCompletion[]
-  clubSwipes         UserClubSwipe[]
-  chatSessions       ChatSession[]
-  timeSessions       TimeSession[]
-  mascotDismissals   MascotDismissal[]
+  // Meta
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  onboardedOn DateTime? @map("onboarded_on")
+
+  // Stored as JSON — interests from both onboarding questions
+  interests          Json? // { question1: string[], question2: string[] }
+  // Array of Org IDs the student liked
+  organisationsLiked Json? @map("organisations_liked") // string[]
+  // Submitted document identifiers
+  documentsSubmitted Json? @map("documents_submitted") // string[]
+
+  // Flags
+  isOnboarded    Boolean @default(false) @map("is_onboarded")
+  isTourComplete Boolean @default(false) @map("is_tour_complete")
+  isInternational Boolean @default(false) @map("is_international")
+
+  // Module tracking
+  // { [moduleId]: { isRead: bool, isQuizDone: bool, isWordleDone: bool, isConnectionsDone: bool } }
+  modulesStatus Json? @map("modules_status")
+  // { [moduleId]: { quiz: { score: number, answers: any[] }, wordle: { score: number }, connections: { score: number } } }
+  moduleScores  Json? @map("module_scores")
+
+  // Buddy self-relation
+  buddyId          String? @map("buddy_id")
+  buddy            User?   @relation("BuddyRelation", fields: [buddyId], references: [id])
+  assignedStudents User[]  @relation("BuddyRelation")
+
+  // Utility relations
+  chatSessions     ChatSession[]
+  timeSessions     TimeSession[]
+  mascotDismissals MascotDismissal[]
 
   @@map("users")
 }
 
-model Interest {
-  id       String         @id @default(uuid())
-  label    String         @unique
-  category String
-  emoji    String
-
-  userInterests UserInterest[]
-  @@map("interests")
-}
-
-model UserInterest {
-  userId     String @map("user_id")
-  interestId String @map("interest_id")
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
-
-  @@id([userId, interestId])
-  @@map("user_interests")
-}
-
 model Module {
-  id               String   @id @default(uuid())
-  title            String
-  slug             String   @unique
-  description      String   @db.Text
-  bannerImageUrl   String?  @map("banner_image_url") @db.Text
-  contentMdx       String?  @map("content_mdx") @db.LongText
-  iconName         String?  @map("icon_name")
-  isMandatory      Boolean  @default(false) @map("is_mandatory")
-  orderIndex       Int      @map("order_index")
-  journeyMilestone String?  @map("journey_milestone")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id          String  @id @default(uuid())
+  title       String
+  icon        String?
+  description String  @db.Text
+  isMandatory Boolean @default(false) @map("is_mandatory")
 
-  games           Game[]
-  moduleProgress  UserModuleProgress[]
-  timeSessions    TimeSession[]
-  gameCompletions UserGameCompletion[]
+  // Game availability flags
+  hasWordle      Boolean @default(false) @map("has_wordle")
+  hasQuiz        Boolean @default(false) @map("has_quiz")
+  hasConnections Boolean @default(false) @map("has_connections")
+
+  // Rich text content (MD) or a path to the MD file
+  content String @db.LongText
+
+  // Analytics counter — incremented each time a student completes the module
+  completionCount Int @default(0) @map("completion_count")
+
+  // Game content stored as JSON
+  // quiz:        { questions: [{ q, options, answer }] }
+  quiz        Json?
+  // connections: { groups: [{ label, color, items: string[] }] } — 5 groups
+  connections Json?
+  // wordle:      correct word string
+  wordle      String?
+
+  // Utility relations
+  timeSessions TimeSession[]
 
   @@map("modules")
 }
 
-model Game {
-  id            String         @id @default(uuid())
-  moduleId      String         @map("module_id")
-  title         String
-  type          GameType
-  difficulty    GameDifficulty
-  pointsValue   Int            @map("points_value")
-  estimatedMins Int            @map("estimated_mins")
-  config        Json
-  orderIndex    Int            @map("order_index")
+model Org {
+  id          String @id @default(uuid())
+  name        String
+  tags        Json   // string[]
+  logo        String @db.Text // Cloudinary link
+  socials     Json   // { instagram?: string, twitter?: string, … }
+  description String @db.Text
 
-  module          Module               @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  gameCompletions UserGameCompletion[]
-
-  @@map("games")
+  @@map("orgs")
 }
 
-model UserModuleProgress {
-  id            String       @id @default(uuid())
-  userId        String       @map("user_id")
-  moduleId      String       @map("module_id")
-  status        ModuleStatus @default(not_started)
-  readPercent   Int          @default(0) @map("read_percent")
-  timeSpentMins Int          @default(0) @map("time_spent_mins")
-  gamesUnlocked Boolean      @default(false) @map("games_unlocked")
-  allGamesDone  Boolean      @default(false) @map("all_games_done")
-  completedAt   DateTime?    @map("completed_at")
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, moduleId])
-  @@map("user_module_progress")
-}
-
-model UserGameCompletion {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  gameId       String   @map("game_id")
-  moduleId     String   @map("module_id")
-  score        Int
-  pointsEarned Int      @map("points_earned")
-  attempts     Int      @default(1)
-  completedAt  DateTime @default(now()) @map("completed_at")
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, gameId])
-  @@map("user_game_completions")
-}
-
-model Club {
-  id            String   @id @default(uuid())
-  name          String
-  type          ClubType
-  description   String   @db.Text
-  coverImageUrl String?  @map("cover_image_url") @db.Text
-  interestTags  Json     @map("interest_tags")
-  contactEmail  String   @map("contact_email")
-  instagramUrl  String?  @map("instagram_url") @db.Text
-  isActive      Boolean  @default(true) @map("is_active")
-
-  swipes UserClubSwipe[]
-
-  @@map("clubs")
-}
-
-model UserClubSwipe {
-  userId   String      @map("user_id")
-  clubId   String      @map("club_id")
-  action   SwipeAction
-  swipedAt DateTime    @default(now()) @map("swiped_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
-
-  @@id([userId, clubId])
-  @@map("user_club_swipes")
-}
+// ─── Utility / Feature Tables (kept for future use) ──────────────────────────
 
 model FaqDocument {
   id        String   @id @default(uuid())
@@ -205,7 +118,7 @@ model FaqDocument {
 model ChatSession {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
-  messages  Json
+  messages  Json     // [{ role, content, timestamp }]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

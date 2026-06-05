@@ -53,6 +53,8 @@ interface TourProviderProps {
   onTourComplete?: () => void;
   onTourSkip?: () => void;
   onStepChange?: (step: TourStepConfig | null) => void; // New prop for generic step changes
+  initialTourComplete?: boolean;
+  initialOnboarded?: boolean;
 }
 
 interface TourContextType {
@@ -422,6 +424,8 @@ export const TourProvider: React.FC<TourProviderProps> = ({
   onTourComplete,
   onTourSkip,
   onStepChange, // Destructure the new prop
+  initialTourComplete = false,
+  initialOnboarded = false,
 }) => {
   const [steps, setSteps] = useState<
     Map<string, TourStepConfig & { element: HTMLElement }>
@@ -433,20 +437,17 @@ export const TourProvider: React.FC<TourProviderProps> = ({
   >([]);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
 
-  const [isSplashActive, setIsSplashActive] = useState(() => {
-    if (typeof window === "undefined") return false;
-    if (window.location.pathname !== "/home") return false;
-    if ((window as any).__welcomeSplashDismissed) return false;
-    return true;
-  });
+  const [isSplashActive, setIsSplashActive] = useState(!initialOnboarded);
 
   useEffect(() => {
-    if (!isSplashActive) return;
-
-    if ((window as any).__welcomeSplashDismissed) {
-      setIsSplashActive(false);
-      return;
+    if (typeof window !== "undefined") {
+      if (window.location.pathname !== "/home" || (window as any).__welcomeSplashDismissed) {
+        setIsSplashActive(false);
+        return;
+      }
     }
+
+    if (!isSplashActive) return;
 
     const handleDismiss = () => setIsSplashActive(false);
     window.addEventListener("welcomeSplashDismissed", handleDismiss);
@@ -515,6 +516,12 @@ const unregisterStep = useCallback((id: string) => {
       if (completed) {
         if (ranOnce) {
           localStorage.setItem(storageKey, "true");
+          // Save to database
+          fetch("/api/user", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isTourComplete: true }),
+          }).catch((err) => console.error("Error saving tour completion:", err));
         }
         if (onTourComplete) {
           onTourComplete();
@@ -523,6 +530,15 @@ const unregisterStep = useCallback((id: string) => {
           new CustomEvent("tourCompleted", { detail: { storageKey } })
         );
       } else if (!completed && onTourSkip) {
+        if (ranOnce) {
+          localStorage.setItem(storageKey, "true");
+          // Save to database (skip marks it complete to prevent re-opening)
+          fetch("/api/user", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isTourComplete: true }),
+          }).catch((err) => console.error("Error saving tour completion on skip:", err));
+        }
         onTourSkip();
       }
     }
@@ -577,7 +593,7 @@ const nextStep = () => {
   useEffect(() => {
     if (autoStart && !hasAutoStarted && steps.size > 0 && shouldStart && !isSplashActive) {
       const tourCompleted = ranOnce
-        ? localStorage.getItem(storageKey) === "true"
+        ? (initialTourComplete || localStorage.getItem(storageKey) === "true")
         : false;
       if (!tourCompleted) {
         const timer = setTimeout(() => {
@@ -597,6 +613,7 @@ const nextStep = () => {
     shouldStart,
     isSplashActive,
     startTour,
+    initialTourComplete,
   ]);
 
   // New useEffect to handle onStepChange callback
