@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
+import { useWebHaptics } from "web-haptics/react";
 
 const QUESTIONS = [
   {
@@ -57,6 +58,7 @@ const LS_ONBOARDED_KEY = "orientation-hub-onboarded";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const haptic = useWebHaptics();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [animPhase, setAnimPhase] = useState<"enter" | "exit">("enter");
@@ -93,7 +95,10 @@ export default function OnboardingPage() {
   }
 
   function advance() {
-    if (!canAdvance()) return;
+    if (!canAdvance()) {
+      haptic.trigger("error");
+      return;
+    }
     // Persist the latest answer before advancing
     const latestAnswers = { ...answers, [question.id]: getCurrentValue() };
     try { localStorage.setItem(LS_ANSWERS_KEY, JSON.stringify(latestAnswers)); } catch {}
@@ -101,10 +106,12 @@ export default function OnboardingPage() {
     setAnimPhase("exit");
     setTimeout(() => {
       if (isLast) {
+        haptic.trigger("success");
         // Mark onboarding done locally so the home page can skip the preloader instantly
         try { localStorage.setItem(LS_ONBOARDED_KEY, "true"); } catch {}
         router.push("/login");
       } else {
+        haptic.trigger("medium");
         setStep(s => s + 1);
         setAnimPhase("enter");
       }
@@ -112,10 +119,17 @@ export default function OnboardingPage() {
   }
 
   function handleKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") advance();
+    if (e.key === "Enter") {
+      if (!canAdvance()) {
+        haptic.trigger("error");
+      } else {
+        advance();
+      }
+    }
   }
 
   function toggleOption(option: string) {
+    haptic.trigger("selection");
     const current = getCurrentValue() as string[];
     setCurrentValue(
       current.includes(option)
@@ -127,118 +141,152 @@ export default function OnboardingPage() {
   const progress = ((step + 1) / QUESTIONS.length) * 100;
 
   return (
-    <div className="relative flex h-screen flex-col items-center justify-center overflow-hidden px-6">
+    <div className="relative flex min-h-dvh flex-col items-center justify-between overflow-y-auto px-4 py-6 sm:px-6 sm:py-12">
+      
+      {/* Background radial gradient glow */}
+      <div 
+        aria-hidden="true" 
+        className="absolute inset-0 -z-20 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: "radial-gradient(circle at 50% 30%, var(--primary-blue-tint, #e0f2fe) 0%, transparent 70%)"
+        }}
+      />
+      
+      {/* Subtle dot-grid texture */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #0A3864 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
 
       {/* Top progress bar */}
-      <div className="absolute top-0 inset-x-0 h-[2px] bg-primary-blue/10">
+      <div className="absolute top-0 inset-x-0 h-[3px] bg-primary-blue/5">
         <div
-          className="h-full bg-primary-blue transition-all duration-700 ease-out"
+          className="h-full bg-primary-blue transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* Step counter */}
-      <div className="absolute top-6 right-8 text-[11px] font-medium text-primary-blue/30 tabular-nums">
-        <span className="text-primary-blue/60 font-semibold">{step + 1}</span>
-        {" "}/{" "}{QUESTIONS.length}
-      </div>
+      {/* Header bar */}
+      <header className="w-full max-w-xl flex items-center justify-between z-10 mb-4 sm:mb-8">
+        {/* Back */}
+        {step > 0 ? (
+          <button
+            onClick={() => {
+              haptic.trigger("light");
+              setAnimPhase("exit");
+              setTimeout(() => { setStep(s => s - 1); setAnimPhase("enter"); }, 360);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary-blue/60 hover:text-primary-blue hover:bg-primary-blue/5 transition-all duration-200 active:scale-95 cursor-pointer"
+          >
+            ← Back
+          </button>
+        ) : (
+          <div className="w-12" /> // spacer
+        )}
 
-      {/* Back */}
-      {step > 0 && (
-        <button
-          onClick={() => {
-            setAnimPhase("exit");
-            setTimeout(() => { setStep(s => s - 1); setAnimPhase("enter"); }, 360);
-          }}
-          className="absolute top-5 left-8 text-[11px] font-medium text-primary-blue/30 hover:text-primary-blue/60 transition-colors"
-        >
-          ← Back
-        </button>
-      )}
+        {/* Step counter */}
+        <div className="text-xs font-medium text-primary-blue/40 tabular-nums bg-primary-blue/5 px-2.5 py-1 rounded-full">
+          <span className="text-primary-blue/70 font-semibold">{step + 1}</span>
+          {" "}/{" "}{QUESTIONS.length}
+        </div>
+      </header>
 
-      {/* Question card */}
-      <div
-        className="w-full max-w-lg"
+      {/* Main card */}
+      <main 
+        className="w-full max-w-xl my-auto"
         style={{
           animation: animPhase === "enter"
             ? "q-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards"
             : "q-exit 0.34s ease forwards",
         }}
       >
-        <p className="text-[10px] font-bold tracking-[0.2em] text-primary-red/70 uppercase mb-5">
-          Question {step + 1}
-        </p>
+        <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-3xl p-6 sm:p-10 shadow-[0_8px_32px_0_rgba(10,56,100,0.04)]">
+          <p className="text-[10px] font-bold tracking-[0.25em] text-primary-red/80 uppercase mb-4">
+            Question {step + 1}
+          </p>
 
-        <h2
-          className="text-3xl sm:text-4xl font-bold text-primary-blue leading-[1.2] mb-2"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {question.label}
-        </h2>
-        <p className="text-sm text-primary-blue/35 mb-10">{question.hint}</p>
-
-        {/* Text / Tel input */}
-        {(question.type === "text" || question.type === "tel") && (
-          <div className="border-b-2 border-primary-blue/15 focus-within:border-primary-blue/60 transition-colors duration-300 mb-10">
-            <input
-              ref={inputRef}
-              type={question.type}
-              placeholder={question.placeholder}
-              value={getCurrentValue() as string}
-              onChange={e => setCurrentValue(e.target.value)}
-              onKeyDown={handleKey}
-              className="w-full bg-transparent text-xl sm:text-2xl text-primary-blue placeholder:text-primary-blue/15 outline-none py-3 font-medium"
-            />
-          </div>
-        )}
-
-        {/* Multi-select chips */}
-        {question.type === "multiselect" && (
-          <div className="flex flex-wrap gap-2.5 mb-10">
-            {question.options!.map(option => {
-              const selected = (getCurrentValue() as string[]).includes(option);
-              return (
-                <button
-                  key={option}
-                  onClick={() => toggleOption(option)}
-                  className={[
-                    "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200",
-                    selected
-                      ? "bg-primary-blue border-primary-blue text-white shadow-sm scale-[1.03]"
-                      : "bg-white/50 border-primary-blue/20 text-primary-blue/60 hover:border-primary-blue/40 hover:text-primary-blue backdrop-blur-sm",
-                  ].join(" ")}
-                >
-                  {selected && <Check className="w-3 h-3 shrink-0" />}
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* CTA row */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={advance}
-            disabled={!canAdvance()}
-            className={[
-              "flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold transition-all duration-200",
-              canAdvance()
-                ? "bg-primary-blue text-white shadow-md hover:shadow-lg hover:scale-[1.02] cursor-pointer"
-                : "bg-primary-blue/8 text-primary-blue/25 cursor-not-allowed",
-            ].join(" ")}
+          <h2
+            className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-blue leading-[1.25] mb-2 tracking-tight"
+            style={{ fontFamily: "var(--font-display)" }}
           >
-            {isLast ? "Let's go" : "OK"}
-            <ArrowRight className="w-4 h-4" />
-          </button>
+            {question.label}
+          </h2>
+          <p className="text-xs sm:text-sm text-primary-blue/40 mb-6 sm:mb-8 font-medium">{question.hint}</p>
 
-          {question.type !== "multiselect" && (
-            <span className="text-xs text-primary-blue/25">
-              press <kbd className="font-mono bg-primary-blue/6 px-1.5 py-0.5 rounded text-primary-blue/40">Enter ↵</kbd>
-            </span>
+          {/* Text / Tel input */}
+          {(question.type === "text" || question.type === "tel") && (
+            <div className="border-b-2 border-primary-blue/10 focus-within:border-primary-blue/50 transition-colors duration-300 mb-8 sm:mb-10">
+              <input
+                ref={inputRef}
+                type={question.type}
+                placeholder={question.placeholder}
+                value={getCurrentValue() as string}
+                onChange={e => setCurrentValue(e.target.value)}
+                onKeyDown={handleKey}
+                className="w-full bg-transparent text-lg sm:text-xl md:text-2xl text-primary-blue placeholder:text-primary-blue/20 outline-none py-3 font-semibold"
+              />
+            </div>
           )}
+
+          {/* Multi-select chips */}
+          {question.type === "multiselect" && (
+            <div className="flex flex-wrap gap-2 sm:gap-2.5 mb-8 sm:mb-10 max-h-[35vh] overflow-y-auto pr-1">
+              {question.options!.map(option => {
+                const selected = (getCurrentValue() as string[]).includes(option);
+                return (
+                  <button
+                    key={option}
+                    onClick={() => toggleOption(option)}
+                    className={[
+                      "flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all duration-200 active:scale-95 min-h-[36px] cursor-pointer",
+                      selected
+                        ? "bg-primary-blue border-primary-blue text-white shadow-sm scale-[1.03]"
+                        : "bg-white/40 border-primary-blue/15 text-primary-blue/60 hover:border-primary-blue/30 hover:text-primary-blue backdrop-blur-sm",
+                    ].join(" ")}
+                  >
+                    {selected && <Check className="w-3 h-3 shrink-0" />}
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* CTA row */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={advance}
+              disabled={!canAdvance()}
+              className={[
+                "flex items-center justify-center gap-2 px-6 py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 active:scale-95",
+                canAdvance()
+                  ? "bg-primary-blue text-white shadow-md hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+                  : "bg-primary-blue/5 text-primary-blue/20 cursor-not-allowed",
+              ].join(" ")}
+            >
+              {isLast ? "Let's go" : "OK"}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {question.type !== "multiselect" && (
+              <span className="hidden sm:inline text-xs text-primary-blue/30">
+                press <kbd className="font-mono bg-primary-blue/5 px-1.5 py-0.5 rounded text-primary-blue/40 border border-primary-blue/5">Enter ↵</kbd>
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer / Info */}
+      <footer className="w-full text-center mt-4 sm:mt-8">
+        <p className="text-[9px] font-semibold tracking-wider text-primary-blue/20 uppercase">
+          Your answers are synced and secured
+        </p>
+      </footer>
     </div>
   );
 }

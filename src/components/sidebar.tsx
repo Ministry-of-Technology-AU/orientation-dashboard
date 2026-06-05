@@ -67,7 +67,11 @@ const navItems = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  orientation?: "vertical" | "horizontal";
+}
+
+export function Sidebar({ orientation = "vertical" }: SidebarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -81,72 +85,87 @@ export function Sidebar() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  return (
-    <div className="flex flex-col items-center py-5 px-2 h-full gap-1">
-      <TourStep
-        id="nav-profile"
-        title="Your Profile"
-        content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
-        order={1}
-        position="right"
-        className="mb-4"
+  const isVertical = orientation === "vertical";
+
+  const profileButton = (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => {
+          haptic.trigger("light");
+          setOpen((v) => !v);
+        }}
+        title="Profile"
+        className="cursor-pointer active:scale-95 transition-transform"
       >
-        <div ref={ref} className="relative">
-          <button
-            onClick={() => {
-              haptic.trigger("light");
-              setOpen((v) => !v);
-            }}
-            title="Profile"
-          >
-            <div className={cn(
-              "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
-              pathname === "/profile" || open
-                ? "bg-primary-red shadow-sm"
-                : "bg-[#c8d9ec] hover:bg-primary-blue/20"
-            )}>
-              <User className={cn("w-5 h-5", pathname === "/profile" || open ? "text-white" : "text-primary-blue")} />
-            </div>
-          </button>
-
-          <AnimatePresence>
-            {open && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, x: -6 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.95, x: -6 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute left-full top-0 ml-3 z-50 bg-white rounded-xl shadow-lg border border-primary-blue/8 py-1.5 w-40 overflow-hidden"
-              >
-                <Link
-                  href="/profile"
-                  onClick={() => {
-                    haptic.trigger("selection");
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-blue hover:bg-primary-blue/5 transition-colors"
-                >
-                  <User className="w-3.5 h-3.5 text-primary-blue/50" />
-                  My Profile
-                </Link>
-                <div className="my-1 h-px bg-primary-blue/6" />
-                <form action={handleSignOut}>
-                  <button
-                    type="submit"
-                    onClick={() => haptic.trigger("medium")}
-                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-red hover:bg-primary-red/5 transition-colors"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Sign out
-                  </button>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className={cn(
+          "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
+          pathname === "/profile" || open
+            ? "bg-primary-red shadow-sm"
+            : "bg-[#c8d9ec] hover:bg-primary-blue/20"
+        )}>
+          <User className={cn("w-5 h-5", pathname === "/profile" || open ? "text-white" : "text-primary-blue")} />
         </div>
-      </TourStep>
+      </button>
 
-      <nav className="flex flex-col gap-1 flex-1">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={isVertical ? { opacity: 0, scale: 0.95, x: -6 } : { opacity: 0, scale: 0.95, y: 6 }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={isVertical ? { opacity: 0, scale: 0.95, x: -6 } : { opacity: 0, scale: 0.95, y: 6 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className={cn(
+              "absolute z-50 bg-white rounded-xl shadow-lg border border-primary-blue/8 py-1.5 w-40 overflow-hidden",
+              isVertical ? "left-full top-0 ml-3" : "bottom-full right-0 mb-3"
+            )}
+          >
+            <Link
+              href="/profile"
+              onClick={() => {
+                haptic.trigger("selection");
+                setOpen(false);
+              }}
+              className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-blue hover:bg-primary-blue/5 transition-colors"
+            >
+              <User className="w-3.5 h-3.5 text-primary-blue/50" />
+              My Profile
+            </Link>
+            <div className="my-1 h-px bg-primary-blue/6" />
+            <form action={handleSignOut}>
+              <button
+                type="submit"
+                onClick={() => haptic.trigger("medium")}
+                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-primary-red hover:bg-primary-red/5 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign out
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  return (
+    <div className={cn(
+      "flex w-full items-center",
+      isVertical ? "flex-col py-5 px-2 h-full gap-1" : "flex-row py-1 px-2 justify-between gap-1"
+    )}>
+      {isVertical && (
+        <TourStep
+          id="nav-profile"
+          title="Your Profile"
+          content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
+          order={1}
+          position="right"
+          className="mb-4"
+        >
+          {profileButton}
+        </TourStep>
+      )}
+
+      <nav className={cn("flex gap-1", isVertical ? "flex-col flex-1" : "flex-row flex-1 justify-around")}>
         {navItems.map(({ icon: Icon, href, label, tourId, tourTitle, tourContent, tourOrder }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -156,22 +175,22 @@ export function Sidebar() {
               title={tourTitle}
               content={tourContent}
               order={tourOrder}
-              position="right"
+              position={isVertical ? "right" : "top"}
             >
               <Link
                 href={href}
                 title={label}
                 onClick={() => haptic.trigger("selection")}
                 className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative z-0",
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all relative z-0 active:scale-95 cursor-pointer",
                   isActive
                     ? "text-white shadow-sm"
-                    : "text-primary-blue/50 hover:bg-primary-blue/10 hover:text-primary-blue"
+                    : "text-primary-blue/55 hover:bg-primary-blue/10 hover:text-primary-blue"
                 )}
               >
                 {isActive && (
                   <motion.span
-                    layoutId="activeSidebarTab"
+                    layoutId={isVertical ? "activeSidebarTabVertical" : "activeSidebarTabHorizontal"}
                     className="absolute inset-0 bg-primary-red rounded-xl -z-10"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
@@ -182,6 +201,19 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {!isVertical && (
+        <TourStep
+          id="nav-profile-mobile"
+          title="Your Profile"
+          content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
+          order={1}
+          position="top"
+          className="ml-2"
+        >
+          {profileButton}
+        </TourStep>
+      )}
     </div>
   );
 }
