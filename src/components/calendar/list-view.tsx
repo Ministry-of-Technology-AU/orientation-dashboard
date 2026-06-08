@@ -29,7 +29,7 @@ const rowVariants = {
       delay: Math.min(i, 8) * 0.03,
       type: "tween" as const,
       duration: 0.2,
-      ease: "easeOut",
+      ease: "easeOut" as const,
     },
   }),
 };
