@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { FaqSection } from "@/components/chat/faq-section";
 import { Plus, MessageSquare } from "lucide-react";
+import { Loader } from "@/components/loader";
 
 type Tab = "chat" | "faq";
 
@@ -103,15 +104,7 @@ export function ChatPageClient({ userImage, userName }: Props) {
       {tab === "chat" ? (
         loadingConvs ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-primary-blue/20 animate-bounce"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
-              ))}
-            </div>
+            <Loader size={80} />
           </div>
         ) : (
           <div className="flex flex-1 overflow-hidden">
