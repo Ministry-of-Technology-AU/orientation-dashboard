@@ -6,8 +6,8 @@ import type { Milestone } from "@/mock-data/dashboard";
 import { useWebHaptics } from "web-haptics/react";
 
 interface MyJourneyPanelProps {
-  milestones: Milestone[];
-  nextUp: { title: string; subtitle: string; href: string };
+  milestones?: Milestone[];
+  nextUp?: { title: string; subtitle: string; href: string };
 }
 
 function MilestoneDot({ status }: { status: Milestone["status"] }) {
@@ -46,6 +46,8 @@ function StatusBadge({ status }: { status: Milestone["status"] }) {
 
 export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
   const haptic = useWebHaptics();
+  const safeMilestones = milestones ?? [];
+  const safeNextUp = nextUp ?? { title: "", subtitle: "", href: "" };
 
   return (
     <div className="flex flex-col h-full">
@@ -54,18 +56,18 @@ export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
 
       {/* Stepper */}
       <div className="flex flex-col gap-0 flex-1">
-        {milestones.map((milestone, i) => (
+        {safeMilestones.map((milestone, i) => (
           <div key={i} className="flex gap-3">
             {/* Dot + connector line */}
             <div className="flex flex-col items-center">
               <MilestoneDot status={milestone.status} />
-              {i < milestones.length - 1 && (
+              {i < safeMilestones.length - 1 && (
                 <div className="w-0.5 flex-1 min-h-[28px] bg-gray-300 my-1" />
               )}
             </div>
 
             {/* Label */}
-            <div className={cn("pb-5", i === milestones.length - 1 && "pb-0")}>
+            <div className={cn("pb-5", i === safeMilestones.length - 1 && "pb-0")}>
               <div className="flex items-center flex-wrap gap-y-0.5">
                 <span
                   className={cn(
@@ -88,20 +90,24 @@ export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
       </div>
 
       {/* Next Up */}
-      <div className="mt-6">
-        <h3 className="text-base font-semibold text-gray-800 mb-2">Next Up</h3>
-        <div className="bg-[#0A3864] rounded-2xl p-4 text-white">
-          <p className="font-semibold text-sm mb-1">{nextUp.title}</p>
-          <p className="text-xs text-blue-200 mb-3">{nextUp.subtitle}</p>
-          <Link
-            href={nextUp.href}
-            onClick={() => haptic.trigger("selection")}
-            className="block w-full text-center text-xs bg-[#0d4a7a] hover:bg-[#1a5fa0] text-white rounded-lg py-2 transition-all duration-200 active:scale-95 cursor-pointer font-semibold shadow-sm"
-          >
-            Resume Module →
-          </Link>
+      {safeNextUp.title && (
+        <div className="mt-6">
+          <h3 className="text-base font-semibold text-gray-800 mb-2">Next Up</h3>
+          <div className="bg-[#0A3864] rounded-2xl p-4 text-white">
+            <p className="font-semibold text-sm mb-1">{safeNextUp.title}</p>
+            <p className="text-xs text-blue-200 mb-3">{safeNextUp.subtitle}</p>
+            {safeNextUp.href && (
+              <Link
+                href={safeNextUp.href}
+                onClick={() => haptic.trigger("selection")}
+                className="block w-full text-center text-xs bg-[#0d4a7a] hover:bg-[#1a5fa0] text-white rounded-lg py-2 transition-all duration-200 active:scale-95 cursor-pointer font-semibold shadow-sm"
+              >
+                Resume Module →
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

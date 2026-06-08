@@ -47,6 +47,16 @@ const itemVariants = {
 export default function DashboardPage() {
   const haptic = useWebHaptics();
 
+  // Robust null handling / fallback values for all dashboard data
+  const user = mockUser ?? { name: "Ashokan Student", totalPoints: 0 };
+  const timeSpendingData = mockTimeSpendingData ?? [];
+  const moduleStats = mockModuleStats ?? { total: 0, completedWithGames: 0, completedModules: 0, notStarted: 0 };
+  const moduleCompletion = mockModuleCompletion ?? { percentage: 0, completed: 0, total: 0 };
+  const todayEvents = mockTodayEvents ?? { day: "", date: 0, events: [] };
+  const hallOfFame = mockHallOfFame ?? [];
+  const journeyMilestones = mockJourneyMilestones ?? [];
+  const nextUp = mockNextUp ?? { title: "", subtitle: "", href: "" };
+
   return (
     <div className="flex flex-col lg:flex-row flex-1 h-full w-full overflow-y-auto lg:overflow-hidden min-w-0 p-3 md:pl-0 gap-3">
       {/* Main scrollable content card */}
@@ -68,9 +78,9 @@ export default function DashboardPage() {
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-xs sm:text-sm font-semibold text-gray-500 tracking-wide">Welcome Back, {mockUser.name}!</p>
+                <p className="text-xs sm:text-sm font-semibold text-gray-500 tracking-wide">Welcome Back, {user.name}!</p>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-primary-blue mt-0.5" style={{ fontFamily: "var(--font-display)" }}>
-                  You&apos;ve got {mockUser.totalPoints} points!
+                  You&apos;ve got {user.totalPoints} points!
                 </h1>
               </div>
 
@@ -100,7 +110,7 @@ export default function DashboardPage() {
           >
             <section className="bg-neutral-50/50 backdrop-blur-sm border border-gray-100 rounded-xl p-4 sm:p-5">
               <h2 className="text-xs font-bold text-primary-blue/70 uppercase tracking-wider mb-4 font-sans">Time Spendings</h2>
-              <TimeSpendingsChart data={mockTimeSpendingData} />
+              <TimeSpendingsChart data={timeSpendingData} />
             </section>
           </TourStep>
         </motion.div>
@@ -114,7 +124,7 @@ export default function DashboardPage() {
             order={9}
             position="top"
           >
-            <StatisticsDonut stats={mockModuleStats} />
+            <StatisticsDonut stats={moduleStats} />
           </TourStep>
 
           <div className="flex flex-col gap-6">
@@ -125,7 +135,7 @@ export default function DashboardPage() {
               order={10}
               position="left"
             >
-              <ModuleCompletionCard data={mockModuleCompletion} />
+              <ModuleCompletionCard data={moduleCompletion} />
             </TourStep>
 
             <TourStep
@@ -135,7 +145,7 @@ export default function DashboardPage() {
               order={11}
               position="left"
             >
-              <TodayEventsCard data={mockTodayEvents} />
+              <TodayEventsCard data={todayEvents} />
             </TourStep>
 
             <TourStep
@@ -145,7 +155,7 @@ export default function DashboardPage() {
               order={12}
               position="left"
             >
-              <HallOfFameCard entries={mockHallOfFame} />
+              <HallOfFameCard entries={hallOfFame} />
             </TourStep>
           </div>
         </motion.div>
@@ -161,7 +171,7 @@ export default function DashboardPage() {
         className="w-full lg:w-80 shrink-0 order-first lg:order-none"
       >
         <aside className="w-full lg:h-full lg:overflow-y-auto px-5 py-6 bg-white/60 backdrop-blur-md border border-white/30 rounded-2xl shadow-[0_8px_32px_0_rgba(10,56,100,0.04)]">
-          <MyJourneyPanel milestones={mockJourneyMilestones} nextUp={mockNextUp} />
+          <MyJourneyPanel milestones={journeyMilestones} nextUp={nextUp} />
         </aside>
       </TourStep>
     </div>
