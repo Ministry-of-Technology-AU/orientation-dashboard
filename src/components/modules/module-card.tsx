@@ -12,7 +12,7 @@ export function ModuleCard({
   return (
     <button
       onClick={() => onClick?.(module)}
-      className="w-full text-left bg-white rounded-2xl p-4 flex gap-4 items-start hover:shadow-md transition-shadow cursor-pointer"
+      className="w-full text-left bg-white rounded-2xl p-4 flex gap-4 items-start hover:shadow-md border border-transparent hover:border-primary-blue/10 transition-all duration-200 active:scale-[0.98] cursor-pointer"
     >
       <ModuleIcon name={module.iconName} />
       <div className="flex-1 min-w-0">
