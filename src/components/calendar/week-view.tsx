@@ -1,6 +1,10 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, EventCategory } from "@/mock-data/calendar";
-import { getEventsForDate, formatTime } from "@/mock-data/calendar";
+import { formatTime } from "@/mock-data/calendar";
 
 const categoryPill: Record<EventCategory, string> = {
   mandatory: "bg-[#f9e8e9] text-[#A61017] border-l-2 border-[#A61017]",
@@ -28,21 +32,29 @@ const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 interface Props {
   currentDate: Date;
   today: Date;
+  events: CalendarEvent[];
   onEventClick: (e: CalendarEvent) => void;
 }
 
-export function WeekView({ currentDate, today, onEventClick }: Props) {
+export function WeekView({ currentDate, today, events, onEventClick }: Props) {
+  const haptic = useWebHaptics();
   const days = getWeekDays(currentDate);
   const todayStr = toDateStr(today);
 
+  // Build date-indexed event map
+  const eventsByDate = events.reduce<Record<string, CalendarEvent[]>>((acc, ev) => {
+    (acc[ev.date] ??= []).push(ev);
+    return acc;
+  }, {});
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+      <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/80">
         {days.map((day, i) => {
           const isToday = toDateStr(day) === todayStr;
           return (
-            <div key={i} className="py-3 text-center border-r border-gray-200 last:border-r-0">
-              <p className="text-xs text-gray-500 mb-0.5">{SHORT_DAYS[i]}</p>
+            <div key={i} className="py-3 text-center border-r border-gray-100 last:border-r-0">
+              <p className="text-[10px] text-gray-400 mb-0.5 uppercase tracking-wider">{SHORT_DAYS[i]}</p>
               <span
                 className={cn(
                   "inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium",
@@ -58,21 +70,25 @@ export function WeekView({ currentDate, today, onEventClick }: Props) {
 
       <div className="grid grid-cols-7 flex-1">
         {days.map((day, i) => {
-          const events = getEventsForDate(toDateStr(day));
+          const dayEvents = eventsByDate[toDateStr(day)] ?? [];
           return (
-            <div key={i} className="p-2 border-r border-gray-200 last:border-r-0 flex flex-col gap-1.5">
-              {events.map((ev) => (
-                <button
+            <div key={i} className="p-2 border-r border-gray-100 last:border-r-0 flex flex-col gap-1.5">
+              {dayEvents.map((ev) => (
+                <motion.button
                   key={ev.id}
-                  onClick={() => onEventClick(ev)}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    haptic.trigger("light");
+                    onEventClick(ev);
+                  }}
                   className={cn(
-                    "w-full text-left rounded-lg px-2 py-1.5 hover:opacity-75 transition-opacity",
+                    "w-full text-left rounded-lg px-2 py-1.5 hover:opacity-80 transition-opacity",
                     categoryPill[ev.category]
                   )}
                 >
                   <p className="text-[11px] font-medium leading-snug truncate">{ev.title}</p>
                   <p className="text-[10px] opacity-60">{formatTime(ev.startTime)}</p>
-                </button>
+                </motion.button>
               ))}
             </div>
           );

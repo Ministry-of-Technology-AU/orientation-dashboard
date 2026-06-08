@@ -1,6 +1,9 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, EventCategory } from "@/mock-data/calendar";
-import { getEventsForDate } from "@/mock-data/calendar";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -36,19 +39,27 @@ interface Props {
   year: number;
   month: number;
   today: Date;
+  events: CalendarEvent[];
   onEventClick: (e: CalendarEvent) => void;
 }
 
-export function MonthView({ year, month, today, onEventClick }: Props) {
+export function MonthView({ year, month, today, events, onEventClick }: Props) {
+  const haptic = useWebHaptics();
   const cells = getMonthCells(year, month);
   const todayStr = toDateStr(today);
+
+  // Build a map for O(1) lookup per date
+  const eventsByDate = events.reduce<Record<string, CalendarEvent[]>>((acc, ev) => {
+    (acc[ev.date] ??= []).push(ev);
+    return acc;
+  }, {});
 
   return (
     <div className="flex flex-col h-full">
       {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
+      <div className="grid grid-cols-7 border-b border-gray-100">
         {DAYS.map((day) => (
-          <div key={day} className="py-2.5 text-center text-xs font-medium text-gray-500 bg-gray-50">
+          <div key={day} className="py-2.5 text-center text-xs font-medium text-gray-400 bg-gray-50/80 tracking-wider uppercase">
             {day}
           </div>
         ))}
@@ -59,7 +70,7 @@ export function MonthView({ year, month, today, onEventClick }: Props) {
         {cells.map(({ date, isCurrentMonth }, i) => {
           const dateStr = toDateStr(date);
           const isToday = dateStr === todayStr;
-          const events = getEventsForDate(dateStr);
+          const dayEvents = eventsByDate[dateStr] ?? [];
           const isLastCol = (i + 1) % 7 === 0;
           const isLastRow = i >= cells.length - 7;
 
@@ -68,14 +79,14 @@ export function MonthView({ year, month, today, onEventClick }: Props) {
               key={dateStr + i}
               className={cn(
                 "min-h-[90px] p-1.5",
-                !isLastRow && "border-b border-gray-200",
-                !isLastCol && "border-r border-gray-200",
+                !isLastRow && "border-b border-gray-100",
+                !isLastCol && "border-r border-gray-100",
                 !isCurrentMonth && "bg-gray-50/60"
               )}
             >
               <span
                 className={cn(
-                  "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mb-1",
+                  "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mb-1 font-medium",
                   isToday
                     ? "bg-[#A61017] text-white font-semibold"
                     : isCurrentMonth
@@ -87,20 +98,24 @@ export function MonthView({ year, month, today, onEventClick }: Props) {
               </span>
 
               <div className="flex flex-col gap-0.5">
-                {events.slice(0, 2).map((ev) => (
-                  <button
+                {dayEvents.slice(0, 2).map((ev) => (
+                  <motion.button
                     key={ev.id}
-                    onClick={() => onEventClick(ev)}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      haptic.trigger("light");
+                      onEventClick(ev);
+                    }}
                     className={cn(
-                      "w-full text-left text-[10px] rounded px-1.5 py-0.5 truncate leading-snug hover:opacity-75 transition-opacity",
+                      "w-full text-left text-[10px] rounded px-1.5 py-0.5 truncate leading-snug hover:opacity-80 transition-opacity",
                       categoryPill[ev.category]
                     )}
                   >
                     {ev.title}
-                  </button>
+                  </motion.button>
                 ))}
-                {events.length > 2 && (
-                  <span className="text-[10px] text-gray-400 px-1">+{events.length - 2} more</span>
+                {dayEvents.length > 2 && (
+                  <span className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 2} more</span>
                 )}
               </div>
             </div>

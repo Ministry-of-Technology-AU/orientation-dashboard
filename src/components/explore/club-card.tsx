@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { Club, ClubType } from "@/mock-data/clubs";
-import { Heart, X } from "lucide-react";
+import { Heart } from "lucide-react";
 
 const typeLabel: Record<ClubType, string> = {
   club: "Club",
@@ -31,9 +31,15 @@ export function ClubCard({
       )}
     >
       {/* Cover image placeholder */}
-      <div className="w-full aspect-4/3 bg-blue-tint rounded-t-2xl relative">
+      <div 
+        className="w-full aspect-4/3 rounded-t-2xl relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, hsl(${(club.name.charCodeAt(0) * 13) % 360}, 80%, 45%), hsl(${(club.name.charCodeAt(club.name.length - 1) * 27) % 360}, 80%, 30%))`
+        }}
+      >
+        <div className="absolute inset-0 bg-black/10" />
         {swipeStatus === 'liked' && (
-           <div className="absolute top-2 right-2 bg-primary-red text-white p-1 rounded-full shadow-md">
+           <div className="absolute top-3 right-3 bg-primary-red text-white p-1.5 rounded-full shadow-md z-10 animate-in zoom-in duration-200">
               <Heart className="w-3 h-3 fill-current" />
            </div>
         )}

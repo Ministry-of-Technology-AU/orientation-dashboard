@@ -14,147 +14,607 @@ export interface Club {
 
 export const mockClubs: Club[] = [
   {
-    id: "c1",
-    name: "Drama Club",
-    type: "club",
-    description:
-      "Ashoka's premiere theatre group, performing everything from Shakespeare to student-written original scripts. We run workshops in acting, directing, and stagecraft every week. No experience needed — just a passion for storytelling and performance.\n\nWe perform two full productions each semester and take part in the inter-university drama circuit. Alumni have gone on to professional theatre and film careers.",
-    contactEmail: "drama@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/ashodrama",
-    interestTags: ["Arts", "Theatre", "Social"],
-    isActive: true,
-    tier: 2,
+    "tier": 1,
+    "id": "c1",
+    "name": "Abhinaya",
+    "type": "society",
+    "description": "To develop and foster a more sustainable and stable dance environment on the Ashoka campus.",
+    "contactEmail": "dancesociety@ashoka.edu.in",
+    "instagramUrl": "https://instagram.com/abhinaya_ashoka",
+    "interestTags": [
+      "Arts",
+      "Dance",
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c2",
-    name: "Debate Society",
-    type: "society",
-    description:
-      "Compete in parliamentary, policy, and British parliamentary debate formats. We train members from zero experience to national-level competition. Weekly practice sessions are open to all.\n\nPast members have won national championships and represented India in international debate circuits including WUDC and WSDC.",
-    contactEmail: "debate@ashoka.edu.in",
-    interestTags: ["Social", "Politics", "Law"],
-    isActive: true,
-    tier: 3,
+    "tier": 2,
+    "id": "c2",
+    "name": "Unmask",
+    "type": "club",
+    "description": "A supportive space for neurodivergent students to connect, share, and thrive as their authentic selves.",
+    "contactEmail": "life@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c3",
-    name: "Photography Circle",
-    type: "club",
-    description:
-      "From phone cameras to DSLRs, we celebrate visual storytelling in all forms. Monthly photo walks, darkroom sessions, and critique workshops help members grow their craft in a supportive community.\n\nWe publish a biannual photo journal and run the official campus photography for major events.",
-    contactEmail: "photography@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/ashoka.lens",
-    interestTags: ["Arts", "Photography", "Social"],
-    isActive: true,
-    tier: 4,
+    "tier": 3,
+    "id": "c3",
+    "name": "The Common Room",
+    "type": "club",
+    "description": "The Common Room is a welcoming space where friends gather, relax, and share meaningful conversations.",
+    "contactEmail": "thecommonroom@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c4",
-    name: "Tech Circle",
-    type: "club",
-    description:
-      "Build, code, and ship. Tech Circle runs hackathons, open-source sprints, and hands-on workshops in web dev, ML, and systems programming. We host Ashoka's annual 24-hour hackathon — AshokaHacks.\n\nMembers collaborate on real projects, mentor each other, and have collectively shipped apps used by thousands of students.",
-    contactEmail: "techcircle@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/techcircle.ashoka",
-    interestTags: ["Tech", "Programming", "Entrepreneurship"],
-    isActive: true,
-    tier: 1,
+    "tier": 4,
+    "id": "c4",
+    "name": "Untangled",
+    "type": "club",
+    "description": "Untangled is a crochet club that teaches, creates, and fosters a community through crochet projects.",
+    "contactEmail": "untangled@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c5",
-    name: "Music Society",
-    type: "society",
-    description:
-      "Instrumentalists, vocalists, composers — all welcome. We jam weekly, perform at campus events, and produce an annual concert that draws the whole university. Genres from classical to jazz to indie.\n\nWe also run open mics and a recording studio that members can book for personal projects.",
-    contactEmail: "music@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/ashoka.music",
-    interestTags: ["Arts", "Music", "Social"],
-    isActive: true,
-    tier: 2,
+    "tier": 1,
+    "id": "c5",
+    "name": "The Green Room",
+    "type": "club",
+    "description": "The club promotes inclusive, experimental theater, producing original stories reflecting diverse cultures for campus and competitions.",
+    "contactEmail": "theatresociety@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Theatre",
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c6",
-    name: "Environmental Action",
-    type: "club",
-    description:
-      "Driving sustainability at Ashoka and beyond. We run campus composting, solar advocacy, and wildlife monitoring projects. Every semester we take on a new environmental initiative and track its impact.\n\nWe partner with NGOs and government bodies on research projects, giving members real-world policy experience.",
-    contactEmail: "envaction@ashoka.edu.in",
-    interestTags: ["Environment", "Social", "Sciences"],
-    isActive: true,
-    tier: 3,
+    "tier": 2,
+    "id": "c6",
+    "name": "Navrang",
+    "type": "club",
+    "description": "The club promotes film appreciation through screenings, discussions, workshops, and collaborative filmmaking projects on campus.",
+    "contactEmail": "filmsoc@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Photography",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c7",
-    name: "Model United Nations",
-    type: "society",
-    description:
-      "AshokaMUN is one of India's largest student-run conferences, attracting over 800 delegates from across the country. We hold weekly committee simulations and send delegations to conferences nationwide.\n\nMembership develops public speaking, negotiation, and research skills. Many members go on to careers in diplomacy and international relations.",
-    contactEmail: "mun@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/ashokamun",
-    interestTags: ["Politics", "Social", "Law"],
-    isActive: true,
-    tier: 4,
+    "tier": 3,
+    "id": "c7",
+    "name": "AUISA",
+    "type": "club",
+    "description": "The club promotes multicultural learning, global engagement, and student welfare.",
+    "contactEmail": "auisa@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c8",
-    name: "Dance Club",
-    type: "club",
-    description:
-      "From Bharatanatyam to hip-hop, we celebrate every form of dance. No prior training required — just the will to move. We hold open practice sessions twice a week and compete in intercollegiate dance festivals.\n\nOur annual showcase, Natyanjali, is one of the most attended student events of the year.",
-    contactEmail: "dance@ashoka.edu.in",
-    instagramUrl: "https://instagram.com/ashoka.dance",
-    interestTags: ["Arts", "Dance", "Social"],
-    isActive: true,
-    tier: 1,
+    "tier": 4,
+    "id": "c8",
+    "name": "The Northeast Collective",
+    "type": "club",
+    "description": "The club provides a space to appreciate and raise awareness about Northeast culture, history, and diversity.",
+    "contactEmail": "northeastcollective@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c9",
-    name: "Entrepreneurship Cell",
-    type: "club",
-    description:
-      "E-Cell connects aspiring founders with mentors, investors, and a community of fellow builders. We run ideation bootcamps, startup weekends, and a seed fund for student ventures.\n\nMembers get access to our mentor network of 100+ founders and VCs, and our portfolio companies have raised over ₹5Cr in external funding.",
-    contactEmail: "ecell@ashoka.edu.in",
-    interestTags: ["Entrepreneurship", "Tech", "Social"],
-    isActive: true,
-    tier: 2,
+    "tier": 1,
+    "id": "c9",
+    "name": "Langup",
+    "type": "club",
+    "description": "A community for language enthusiasts to learn and enhance languages through peer-oriented learning.",
+    "contactEmail": "langup@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Writing",
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c10",
-    name: "Literary Society",
-    type: "society",
-    description:
-      "For readers, writers, and lovers of language. We host reading circles, writing workshops, author talks, and publish the campus literary journal twice a year.\n\nMembers have gone on to publish novels, win national writing awards, and work in journalism and publishing.",
-    contactEmail: "litso@ashoka.edu.in",
-    interestTags: ["Arts", "Writing", "Social"],
-    isActive: true,
-    tier: 3,
+    "tier": 2,
+    "id": "c10",
+    "name": "Ashoka MUN",
+    "type": "club",
+    "description": "Ashoka MUN aims to promote a Model United Nations culture on campus through participation in simulated UN conferences at various institutions.",
+    "contactEmail": "ashoka.mun@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c11",
-    name: "Sports Ministry",
-    type: "ministry",
-    description:
-      "The Sports Ministry manages all inter-college athletics and on-campus recreational sports. We coordinate teams for football, basketball, cricket, athletics, and more.\n\nWe run the annual Sports Fest, manage sports infrastructure bookings, and advocate for student athletic welfare with the administration.",
-    contactEmail: "sports@ashoka.edu.in",
-    interestTags: ["Sports", "Social"],
-    isActive: true,
-    tier: 4,
+    "tier": 3,
+    "id": "c11",
+    "name": "Hallyu",
+    "type": "club",
+    "description": "Our in-house club welcomes fans and non-fans of all things Korean, from music to fashion.",
+    "contactEmail": "hallyu@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Music",
+      "Social"
+    ],
+    "isActive": true
   },
   {
-    id: "c12",
-    name: "Student Government",
-    type: "ministry",
-    description:
-      "The Student Government Association is the elected representative body of Ashoka students. We liaise between students and administration, manage student funds, and run key student welfare initiatives.\n\nAny student can attend open SGA meetings and raise issues. Elections are held each spring semester.",
-    contactEmail: "sga@ashoka.edu.in",
-    interestTags: ["Politics", "Social", "Law"],
-    isActive: true,
-    tier: 1,
+    "tier": 4,
+    "id": "c12",
+    "name": "Art & Design Collective",
+    "type": "club",
+    "description": "To create a space at Ashoka where students can connect, collaborate, and learn from each other about art and design.",
+    "contactEmail": "adc@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Social"
+    ],
+    "isActive": true
   },
+  {
+    "tier": 1,
+    "id": "c13",
+    "name": "Hindvi",
+    "type": "club",
+    "description": "The club promotes Hindustani language, art, literature, music, and heritage through events and engagement.",
+    "contactEmail": "hindiurdu@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Music",
+      "Writing",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c14",
+    "name": "The Comics Sans",
+    "type": "club",
+    "description": "A haven for all comic and graphic novel enthusiasts to celebrate stories, art, and imagination.",
+    "contactEmail": "life@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c15",
+    "name": "Rotaract",
+    "type": "club",
+    "description": "Rotaract is the chapter organisation of Rotary International.",
+    "contactEmail": "rotaract@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c16",
+    "name": "Hum Raahi",
+    "type": "club",
+    "description": "A travel initiative by Ashokan students aimed at promoting a culture of travel experiences that blend heritage, culture, and history.",
+    "contactEmail": "humraahi@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c17",
+    "name": "Feminist Forum",
+    "type": "club",
+    "description": "A collective dedicated to dialogue, solidarity, and action towards gender equality and justice.",
+    "contactEmail": "life@ashoka.edu.in",
+    "interestTags": [
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c18",
+    "name": "Her Campus Ashoka",
+    "type": "club",
+    "description": "A global college journal for students, particularly women, serving as a guide to college life.",
+    "contactEmail": "hcashoka@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c19",
+    "name": "Enactus",
+    "type": "club",
+    "description": "Ashoka Chapter of an international non-profit enabling students to create sustainable businesses addressing social issues and employment.",
+    "contactEmail": "enactus@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Music",
+      "Entrepreneurship",
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c20",
+    "name": "Neev",
+    "type": "club",
+    "description": "A student-run club fostering collaborative community engagement between Ashoka and its local surroundings.",
+    "contactEmail": "neev@ashoka.edu.in",
+    "interestTags": [
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c21",
+    "name": "Orators",
+    "type": "club",
+    "description": "The club fosters public speaking skills at Ashoka through practice, feedback, and peer mentoring.",
+    "contactEmail": "orators@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Writing",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c22",
+    "name": "Quizzing Club",
+    "type": "club",
+    "description": "The club popularizes quizzing at Ashoka by organizing regular, open events for active engagement.",
+    "contactEmail": "quizzing@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c23",
+    "name": "Ashoka Debating Union",
+    "type": "club",
+    "description": "The Ashoka Debating Union (ADU) is committed to establishing and nurturing a strong culture of organized debating at Ashoka University. Through regular training sessions, practice debates, and workshops, the club equips students with critical thinking, public speaking, and analytical skill",
+    "contactEmail": "debating@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Writing",
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c24",
+    "name": "Ashoka Farm Fresh",
+    "type": "club",
+    "description": "The aim of the club is to actively grow organic vegetables and host events to distribute the produce on campus.",
+    "contactEmail": "farmfresh@ashoka.edu.in",
+    "interestTags": [
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c25",
+    "name": "Ruhi",
+    "type": "club",
+    "description": "The club teaches English to support staff, fostering bonds and helping them reach their potential.",
+    "contactEmail": "ruhi@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c26",
+    "name": "The Anime Club",
+    "type": "club",
+    "description": "The club unites Ashokans to appreciate and explore all forms of anime and anime-inspired works.",
+    "contactEmail": "anime@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c27",
+    "name": "CODA",
+    "type": "club",
+    "description": "The Annual Yearbook club for graduating Ashokan students",
+    "contactEmail": "coda@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c28",
+    "name": "Caperture",
+    "type": "club",
+    "description": "The club fosters an enriching photography culture at Ashoka through creative initiatives and engagement.",
+    "contactEmail": "caperture@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Photography",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c29",
+    "name": "Khayaal",
+    "type": "club",
+    "description": "Khayal fosters a culture of filmmaking, encouraging creation, appreciation, and critique of movies.",
+    "contactEmail": "filmmakingclub@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Photography",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c30",
+    "name": "Red Brick Words",
+    "type": "club",
+    "description": "The club provides a platform for students to explore, write, and perform spoken word poetry.",
+    "contactEmail": "poetry@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Writing",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c31",
+    "name": "The Comic Relief",
+    "type": "club",
+    "description": "The Comic Relief is Ashoka University’s comedy club, offering much-needed laughter and lightness amidst the rigors of academic life. With a focus on stand-up, improv, and sketch comedy, the club provides a creative outlet for students to unwind, express themselves, and connect through humor",
+    "contactEmail": "thecomicrelief@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Theatre",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c32",
+    "name": "Ashoka Fintech Club",
+    "type": "club",
+    "description": "The club fosters innovation in fintech through workshops, industry engagement, and collaborative projects for students.",
+    "contactEmail": "fintech@ashoka.edu.in",
+    "interestTags": [
+      "Entrepreneurship",
+      "Tech",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c33",
+    "name": "Ashoka Investment Club",
+    "type": "club",
+    "description": "The club brings together finance enthusiasts to develop skills in investment management through company analysis, stock presentations, expert meetings, and job mentoring.",
+    "contactEmail": "investmentsclub@ashoka.edu.in",
+    "interestTags": [
+      "Entrepreneurship",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c34",
+    "name": "Ashoka Women in Business & Leadership",
+    "type": "club",
+    "description": "The club empowers young women with skills, mentorship, and a network for career growth.",
+    "contactEmail": "awibnl@ashoka.edu.in",
+    "interestTags": [
+      "Entrepreneurship",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c35",
+    "name": "AUSDG",
+    "type": "club",
+    "description": "The Society for Sustainable Development Goals fosters conversations and projects focused on global sustainability practices.",
+    "contactEmail": "ausdg@ashoka.edu.in",
+    "interestTags": [
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c36",
+    "name": "CLAD",
+    "type": "club",
+    "description": "CLAD promotes fashion, makeup, and design appreciation at Ashoka, emphasizing creativity, inclusivity, and accessibility.",
+    "contactEmail": "clad@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c37",
+    "name": "Eeshto",
+    "type": "society",
+    "description": "The society promotes a board gaming culture on campus to facilitate learning through games.",
+    "contactEmail": "eeshto@ashoka.edu.in",
+    "interestTags": [
+      "Tech",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c38",
+    "name": "Kaagazi",
+    "type": "club",
+    "description": "Aims to foster a culture of Origami and sustainability",
+    "contactEmail": "kaagazi@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c39",
+    "name": "Kalinga Magazine",
+    "type": "club",
+    "description": "A humor magazine satirizing the everyday trivialities of campus life.",
+    "contactEmail": "kalinga@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Writing",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c40",
+    "name": "Mad batter",
+    "type": "club",
+    "description": "The club popularizes baking on campus, develops skills, and provides a platform to share passions.",
+    "contactEmail": "madbatter@ashoka.edu.in",
+    "interestTags": [
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c41",
+    "name": "Pawsitive",
+    "type": "club",
+    "description": "The club works for animal welfare, fostering a campus culture of comfort and unconditional love.",
+    "contactEmail": "pawsitive@ashoka.edu.in",
+    "interestTags": [
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c42",
+    "name": "Siyahi",
+    "type": "club",
+    "description": "The club expands art culture on campus through accessible events, installations, and collaborations with societies.",
+    "contactEmail": "art.society@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c43",
+    "name": "Vistaar",
+    "type": "society",
+    "description": "The club fosters an inclusive, collaborative music community that promotes growth, creativity, and professionalism.",
+    "contactEmail": "vistaar@ashoka.edu.in",
+    "interestTags": [
+      "Arts",
+      "Music",
+      "Politics",
+      "Law",
+      "Social"
+    ],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c44",
+    "name": "Ashoka Consulting Club",
+    "type": "club",
+    "description": "The club unites dedicated students from diverse majors to develop problem-solving skills, compete in case studies, excel in consulting interviews, and enhance structured thinking, logical reasoning, and communication.",
+    "contactEmail": "consulting@ashoka.edu.in",
+    "interestTags": [
+      "Politics",
+      "Law",
+      "Entrepreneurship",
+      "Environment",
+      "Social"
+    ],
+    "isActive": true
+  }
 ];
 
 // Mock: user is interested in Arts, Tech, Social
-export const mockUserInterestTags = ["Arts", "Tech", "Social", "Music"];
+export const mockUserInterestTags = ["Arts", "Tech", "Social", "Music", "Politics"];
 
 export function getRecommendedClubs(userTags: string[], swipes: Record<string, "liked" | "dismissed">): Club[] {
   return mockClubs
