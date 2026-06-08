@@ -17,7 +17,10 @@ export default async function LandingPage() {
         shouldRedirect = true;
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error && (error.digest === "DYNAMIC_SERVER_USAGE" || error.digest?.startsWith("NEXT_") || error.message?.includes("Dynamic server usage"))) {
+      throw error;
+    }
     console.error("Error in LandingPage:", error);
   }
 
