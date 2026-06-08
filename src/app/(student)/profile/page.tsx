@@ -35,7 +35,7 @@ export default async function ProfilePage() {
 
   const initials = user.name
     .split(" ")
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();

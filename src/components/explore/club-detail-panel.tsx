@@ -1,4 +1,4 @@
-import { X, Heart, ExternalLink, Mail, Info } from "lucide-react";
+import { X, Heart, ExternalLink, Mail } from "lucide-react";
 import type { Club } from "@/mock-data/clubs";
 
 interface Props {
@@ -43,7 +43,12 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
           {club.name}
         </h2>
         
-        <div className="flex items-center gap-4 mb-4">
+        <div 
+          className="flex items-center gap-4 mb-4" 
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           <a
             href={`mailto:${club.contactEmail}`}
             className="flex items-center gap-1.5 text-xs font-medium text-white/70 hover:text-white transition-colors"
@@ -65,7 +70,13 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
         </div>
 
         {/* Scrollable Description inside the card */}
-        <div className="overflow-y-auto max-h-40 pr-3 custom-scrollbar mb-2 space-y-3">
+        <div 
+          className="overflow-y-auto max-h-40 pr-3 custom-scrollbar mb-2 space-y-3 touch-pan-y"
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
           {paragraphs.map((p, i) => (
             <p key={i} className="text-sm text-white/80 leading-relaxed font-medium">
               {p}
@@ -75,7 +86,12 @@ export function ClubDetailPanel({ club, isLiked, onDismiss, onLike, onUnlike }: 
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-6 px-8">
+      <div 
+        className="absolute bottom-6 left-0 right-0 z-20 flex justify-center gap-6 px-8"
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         <button
           onClick={() => onDismiss(club.id)}
           className="w-16 h-16 flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white rounded-full transition-all active:scale-90 shadow-xl"

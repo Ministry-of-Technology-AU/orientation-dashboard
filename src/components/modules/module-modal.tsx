@@ -25,7 +25,7 @@ const ctaLabel: Record<string, string> = {
   completed: "Review Module",
 };
 
-export function ModuleModal({
+export function ModuleModalContent({
   module,
   onClose,
 }: {
@@ -34,27 +34,10 @@ export function ModuleModal({
 }) {
   const gamesLocked = module.readPercent < 80;
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-primary-blue/20 backdrop-blur-[3px]" />
-
-      {/* Panel */}
-      <div
-        className="relative z-10 bg-white rounded-2xl w-full max-w-[520px] max-h-[88vh] flex flex-col shadow-2xl shadow-primary-blue/15 overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* ── Header ── */}
-        <div className="px-6 pt-6 pb-5 flex items-start gap-4">
+    <div className="flex flex-col h-full w-full">
+      {/* ── Header ── */}
+      <div className="px-6 pt-6 pb-5 flex items-start gap-4">
           <div className="shrink-0 mt-0.5">
             <ModuleIcon name={module.iconName} />
           </div>
@@ -190,7 +173,6 @@ export function ModuleModal({
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-      </div>
     </div>
   );
 }
