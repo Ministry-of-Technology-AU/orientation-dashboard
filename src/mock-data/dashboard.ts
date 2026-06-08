@@ -59,7 +59,7 @@ export const mockJourneyMilestones: Milestone[] = [
 ];
 
 export const mockNextUp = {
-  title: "Internship Policy Module",
+  title: "Academic Policies & Honour Code",
   subtitle: "Continue where you left off:",
-  href: "/modules/internship-policy",
+  href: "/modules/handbook-academic/read",
 };

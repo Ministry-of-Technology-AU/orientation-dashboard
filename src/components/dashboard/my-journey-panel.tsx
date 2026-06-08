@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Milestone } from "@/mock-data/dashboard";
+import { useWebHaptics } from "web-haptics/react";
 
 interface MyJourneyPanelProps {
   milestones: Milestone[];
@@ -42,6 +45,8 @@ function StatusBadge({ status }: { status: Milestone["status"] }) {
 }
 
 export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
+  const haptic = useWebHaptics();
+
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-3xl font-bold text-gray-900 mb-1">My Journey</h2>
@@ -90,7 +95,8 @@ export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
           <p className="text-xs text-blue-200 mb-3">{nextUp.subtitle}</p>
           <Link
             href={nextUp.href}
-            className="block w-full text-center text-xs bg-[#0d4a7a] hover:bg-[#1a5fa0] text-white rounded-lg py-2 transition-colors"
+            onClick={() => haptic.trigger("selection")}
+            className="block w-full text-center text-xs bg-[#0d4a7a] hover:bg-[#1a5fa0] text-white rounded-lg py-2 transition-all duration-200 active:scale-95 cursor-pointer font-semibold shadow-sm"
           >
             Resume Module →
           </Link>
