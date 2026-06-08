@@ -17,14 +17,17 @@ const legend = [
   { label: "Yet to Start", color: "#d1dae3" },
 ];
 
-export function StatisticsDonut({ stats }: { stats: ModuleStats }) {
+export function StatisticsDonut({ stats }: { stats?: ModuleStats }) {
+  const safeStats = stats ?? { total: 0, completedWithGames: 0, completedModules: 0, notStarted: 0 };
   const data = [
-    { value: stats.completedWithGames },
-    { value: stats.completedModules },
-    { value: stats.notStarted },
+    { value: safeStats.completedWithGames ?? 0 },
+    { value: safeStats.completedModules ?? 0 },
+    { value: safeStats.notStarted ?? 0 },
   ];
 
-  const pcts = data.map((d) => Math.round((d.value / stats.total) * 100));
+  const total = safeStats.total || 1; // Avoid division by zero
+  const pcts = data.map((d) => Math.round((d.value / total) * 100));
+
 
   return (
     <div className="bg-white rounded-2xl p-5 flex flex-col">
@@ -51,7 +54,7 @@ export function StatisticsDonut({ stats }: { stats: ModuleStats }) {
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-4xl font-bold text-gray-900">
-              {String(stats.total).padStart(2, "0")}
+              {String(safeStats.total).padStart(2, "0")}
             </span>
             <span className="text-sm text-gray-500 mt-0.5">Modules</span>
           </div>

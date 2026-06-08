@@ -8,10 +8,11 @@ interface DataPoint {
   active: boolean;
 }
 
-export function TimeSpendingsChart({ data }: { data: DataPoint[] }) {
+export function TimeSpendingsChart({ data }: { data?: DataPoint[] }) {
+  const safeData = data ?? [];
   return (
     <ResponsiveContainer width="100%" height={180} minWidth={0}>
-      <BarChart data={data} barSize={36} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+      <BarChart data={safeData} barSize={36} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
         <XAxis
           dataKey="day"
           axisLine={false}
@@ -31,7 +32,7 @@ export function TimeSpendingsChart({ data }: { data: DataPoint[] }) {
           label={{ value: "2hr", position: "left", fill: "#9ca3af", fontSize: 11 }}
         />
         <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
-          {data.map((entry, index) => (
+          {safeData.map((entry, index) => (
             <Cell key={index} fill={entry.active ? "#0A3864" : "#c8d3de"} />
           ))}
         </Bar>

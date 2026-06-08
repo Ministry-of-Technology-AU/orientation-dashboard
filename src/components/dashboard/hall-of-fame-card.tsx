@@ -3,12 +3,13 @@ interface HallEntry {
   points: number;
 }
 
-export function HallOfFameCard({ entries }: { entries: HallEntry[] }) {
+export function HallOfFameCard({ entries }: { entries?: HallEntry[] }) {
+  const safeEntries = entries ?? [];
   return (
     <div className="bg-white rounded-2xl p-4">
       <h3 className="text-base font-semibold text-gray-800 mb-2">Hall of Fame</h3>
       <div className="border-t border-gray-200">
-        {entries.map((entry, i) => (
+        {safeEntries.map((entry, i) => (
           <div
             key={i}
             className="flex items-center justify-between py-2 border-b border-gray-100"

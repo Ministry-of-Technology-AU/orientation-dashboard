@@ -4,16 +4,18 @@ interface TodayEventsData {
   events: { title: string; location: string; time: string }[];
 }
 
-export function TodayEventsCard({ data }: { data: TodayEventsData }) {
-  const [firstEvent, ...restEvents] = data.events;
+export function TodayEventsCard({ data }: { data?: TodayEventsData }) {
+  const safeData = data ?? { day: "", date: 0, events: [] };
+  const events = safeData.events ?? [];
+  const [firstEvent, ...restEvents] = events;
 
   return (
     <div className="bg-[#A61017] rounded-2xl p-4 text-white">
       <div className="flex gap-4">
         {/* Date block */}
         <div className="shrink-0">
-          <p className="text-base font-semibold leading-tight">{data.day}</p>
-          <p className="text-5xl font-bold leading-none mt-0.5">{data.date}</p>
+          <p className="text-base font-semibold leading-tight">{safeData.day}</p>
+          <p className="text-5xl font-bold leading-none mt-0.5">{safeData.date || ""}</p>
         </div>
 
         {/* Events */}
