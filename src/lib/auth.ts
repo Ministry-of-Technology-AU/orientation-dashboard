@@ -7,6 +7,15 @@ const ALLOWED_EMAILS = (process.env.AUTH_ALLOWED_EMAILS ?? "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+function isAdminEmail(email: string): boolean {
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 function isAllowedEmail(email: string): boolean {
   const e = email.toLowerCase();
   if (ALLOWED_EMAILS.includes(e)) return true;
@@ -34,7 +43,7 @@ const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id || "mock-user-id";
-        token.role = "student";
+        token.role = isAdminEmail(user.email ?? "") ? "admin" : "student";
       }
       // Capture the Google ID token on first sign-in (account is only present then)
       if (account?.id_token) {
@@ -55,28 +64,11 @@ const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
 const auth = Object.assign(
   function auth(...args: any[]) {
     // If arguments are passed, we are wrapping a middleware/route handler.
-    // Return the wrapped middleware function synchronously!
     if (args.length > 0) {
       return (nextAuth as any)(...args);
     }
-
-    // Otherwise, we are fetching the current session
-    return (async () => {
-      const session = await nextAuth();
-      if (session) return session;
-
-      // Return mock session on localhost / development when no session exists
-      return {
-        user: {
-          id: "mock-student-id-123",
-          name: "Ashokan Student",
-          email: "student_ug25@ashoka.edu.in",
-          role: "student",
-          image: undefined,
-        },
-        expires: new Date(Date.now() + 3600 * 1000).toISOString(),
-      } as any;
-    })();
+    // Otherwise, return the real session (null if not signed in).
+    return nextAuth();
   },
   nextAuth
 );

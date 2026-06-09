@@ -88,7 +88,7 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
   const isVertical = orientation === "vertical";
 
   const profileButton = (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={cn("relative", open && "z-50")}>
       <button
         onClick={() => {
           haptic.trigger("light");

@@ -12,7 +12,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   // Ensure user exists in database and fetch flags
   let dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { email: session.user.email ?? "" },
   });
 
   if (!dbUser) {
@@ -35,7 +35,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
     >
       <div className="flex flex-col md:flex-row h-screen overflow-hidden">
         {/* Desktop Collapsed Sidebar */}
-        <div className="hidden md:block m-3 mr-0 shrink-0">
+        <div className="hidden md:block m-3 mr-0 shrink-0 relative z-10">
           <div className="bg-blue-tint/80 backdrop-blur-sm rounded-2xl h-full w-15 flex flex-col">
             <Sidebar orientation="vertical" />
           </div>
