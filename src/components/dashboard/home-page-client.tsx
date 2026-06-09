@@ -1,121 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import {
-  FileText, Map, Navigation2, PackageCheck,
-  HeartPulse, Phone, CheckCircle2, Circle, ArrowRight, ChevronDown,
-} from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { FileText, CheckCircle2, Circle, ArrowRight, ChevronDown } from "lucide-react";
+import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { TourStep } from "@/components/guided-tour";
 import { useWebHaptics } from "web-haptics/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-const GUIDES = [
-  {
-    id: "documents",
-    icon: FileText,
-    label: "Documents",
-    title: "Documents to Submit",
-    description: "Complete your profile and upload all required documents on the dashboard before arriving on campus.",
-    items: [
-      "Complete Anti-ragging Affidavit on the UGC portal — enter the reference number in the Upload Originals section",
-      "Download, fill, and upload the Authorization Form for Emergency Medical & General Health — carry a physical copy to the Registrar's desk on campus",
-      "Fill and upload the Student and Parent Handbook Declaration Form",
-      "Fill and upload the Residence Leave Approval and Consent Form — read the policy carefully before signing",
-      "Upload Class XII mark sheet/transcript and passing certificate (DigiLocker accepted if originals are delayed)",
-      "Upload Class X mark sheet/transcript and certificate",
-      "Upload Aadhaar card (Indian nationals) or Passport (international students)",
-      "Optional: Submit UGC Academic Bank of Credits (ABC) form and enter the 12-digit reference number",
-      "Optional: Upload Domicile certificate (Haryana domicile students) or UG mark sheet (transfer students)",
-      "Bring all original documents on arrival — the Registrar's Office will verify and return them immediately",
-    ],
-  },
-  {
-    id: "campus-tour",
-    icon: Map,
-    label: "Campus Map",
-    title: "Campus Tour",
-    description: "Key buildings and facilities you'll be using from day one. Use the virtual campus map to locate your residential block.",
-    items: [
-      "Use Google Chrome or Safari to view the interactive campus map — Firefox may not render it correctly",
-      "Search by residential block name in the map search bar to find your room location",
-      "Rooms are twin-sharing with central air-conditioning and window blinds for privacy",
-      "Each floor has a pantry: microwave, fridge, induction plate, kettle, and water cooler",
-      "Washing machines are available in all residence halls",
-      "ACWB (Counselling Centre) — CN313, 3rd Floor, AC04, Library Building",
-      "Student Care Office — RH2, Ground Floor",
-      "Tuck Shop and Stationery Shop are on campus — good for buying toiletries and supplies after arrival",
-    ],
-  },
-  {
-    id: "reach-campus",
-    icon: Navigation2,
-    label: "Getting Here",
-    title: "How to Reach Campus",
-    description: "Directions, shuttle timings, and transport options from major hubs to Ashoka University.",
-    items: [
-      "Refer to the 'How to Reach Ashoka University' PDF and video guide available in the Quick Links section of the dashboard",
-      "An updated shuttle schedule is available in the Quick Links section — refer to the shuttle booking guide for instructions",
-      "From IGI Airport (T1/T2/T3): ~45 min via NH-44 towards Sonipat, Haryana",
-      "From Hazrat Nizamuddin / New Delhi railway station: ~60 min by cab",
-      "Nearest railway station: Sonipat Junction — 30 min by auto/cab to campus",
-      "Nearest metro: Samaypur Badli (Red Line, Delhi) — take a cab from there",
-      "Campus is located in Rajiv Gandhi Education City, Sonipat — GPS: 28.9452° N, 77.0964° E",
-    ],
-  },
-  {
-    id: "movein",
-    icon: PackageCheck,
-    label: "Move-in",
-    title: "Move-in Checklist",
-    description: "What's in your room and what to bring — so nothing gets left behind before your big move.",
-    items: [
-      "Room comes with: extra-long single bed (L80\" × W38\") with mattress, 2 bed drawers, overhead bed light",
-      "Room comes with: wardrobe/cupboard with mirror, study table & chair, white board, soft board, and bookshelves",
-      "Bring: bedding (pillow, sheets, light blanket) — mattress is provided but linen is not",
-      "Bring: towels × 2 and personal hygiene essentials",
-      "Bring: laptop, charger, and earphones",
-      "Bring: rain jacket or umbrella — August is monsoon season during O-Week",
-      "Bring: a warm layer — classrooms and the library are heavily air-conditioned",
-      "Bring: any personal medications and a copy of your prescription",
-      "Tip: buy toiletries and stationery from campus shops after arrival to save packing space",
-      "Tip: pack clothes for one season at a time — ideal for students with families living close to campus",
-    ],
-  },
-  {
-    id: "health",
-    icon: HeartPulse,
-    label: "Health & Wellbeing",
-    title: "Health & Wellbeing",
-    description: "Counselling, mental health support, and student care resources available to all Ashokans.",
-    items: [
-      "ACWB (Ashoka Centre for Well-Being) offers free, confidential counselling — book via the ACWB Portal or email well.being@ashoka.edu.in",
-      "ACWB Helpline: +91-7082000421 (Mon–Fri, 10 AM–6 PM) for appointments and queries",
-      "Walk-in sessions for urgent emotional needs: CN313, 3rd Floor, AC04, Library Building",
-      "24/7 Mental Health Helplines: 1800-258-8121 | 1800-258-8999 | 1800-202-6121 (toll-free)",
-      "Online counselling also available via the '1 to 1 Help' mobile app",
-      "Student Care Office: non-clinical case managers for academic, emotional, and wellness support — studentcare@ashoka.edu.in | +91-7082000403",
-      "OLS (Office of Learning Support): accessibility, academic accommodations, and assistive technology — ols@ashoka.edu.in",
-      "Download the Ashoka mobile app (requires a registered Indian mobile number) for easy access to all campus services",
-    ],
-  },
-  {
-    id: "contacts",
-    icon: Phone,
-    label: "Key Contacts",
-    title: "Key Contacts",
-    description: "Save these numbers and emails before you arrive on campus.",
-    items: [
-      "Student Affairs (general queries): studentaffairs@ashoka.edu.in",
-      "Registrar's Office (documents & verification): registrar@ashoka.edu.in",
-      "ACWB Counselling: well.being@ashoka.edu.in | +91-7082000421 (Mon–Fri, 10 AM–6 PM)",
-      "24/7 Mental Health Helpline: 1800-258-8121 (toll-free)",
-      "Student Care Office: studentcare@ashoka.edu.in | +91-7082000403",
-      "OLS (Learning Support): ols@ashoka.edu.in",
-      "OSA Instagram: follow for campus updates and announcements",
-    ],
-  },
-];
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { GuideMeta } from "@/lib/notion";
 
 function loadCompleted(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -133,10 +27,20 @@ function saveCompleted(set: Set<string>) {
 
 type Phase = "splash" | "settling" | "done";
 
-export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }) {
+export default function HomePageClient({
+  isOnboarded,
+  guides,
+}: {
+  isOnboarded: boolean;
+  guides: GuideMeta[];
+}) {
   const haptic = useWebHaptics();
 
-  const [selectedId, setSelectedId] = useState(GUIDES[0].id);
+  const [selectedId, setSelectedId] = useState<string>(guides[0]?.id ?? "");
+  /** markdown content cache: Map<pageId, markdown string> */
+  const [contentCache, setContentCache] = useState<Map<string, string>>(new Map());
+  /** loading state for current tab content */
+  const [contentLoading, setContentLoading] = useState(false);
   const [visible, setVisible] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const prevId = useRef(selectedId);
@@ -162,6 +66,30 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
     const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 12;
     setShowScrollHint(isScrollable && !atBottom);
   };
+
+  // ── Lazy content fetcher ─────────────────────────────────────────────────
+  const fetchContent = useCallback(async (id: string) => {
+    if (!id) return;
+    if (contentCache.has(id)) return; // already fetched
+    setContentLoading(true);
+    try {
+      const res = await fetch(`/api/guides/${id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { markdown?: string };
+      setContentCache(prev => new Map(prev).set(id, data.markdown ?? ""));
+    } catch (err) {
+      console.error(`Failed to fetch content for guide ${id}:`, err);
+      setContentCache(prev => new Map(prev).set(id, "")); // cache empty so we don't retry on every render
+    } finally {
+      setContentLoading(false);
+    }
+  }, [contentCache]);
+
+  // Auto-fetch first guide on mount
+  useEffect(() => {
+    if (guides.length > 0) fetchContent(guides[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guides]);
 
   // Reset scroll and check height on tab change / visibility change
   useEffect(() => {
@@ -293,8 +221,12 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
   }
 
   function goNext() {
-    const idx = GUIDES.findIndex(g => g.id === selectedId);
-    if (idx < GUIDES.length - 1) select(GUIDES[idx + 1].id);
+    const idx = guides.findIndex(g => g.id === selectedId);
+    if (idx < guides.length - 1) {
+      const nextId = guides[idx + 1].id;
+      select(nextId);
+      fetchContent(nextId);
+    }
   }
 
   function handleNextGuide() {
@@ -302,12 +234,40 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
     goNext();
   }
 
-  const guide = GUIDES.find(g => g.id === selectedId)!;
-  const Icon = guide.icon;
-  const isCompleted = completedIds.has(selectedId);
-  const currentIdx = GUIDES.findIndex(g => g.id === selectedId);
-  const isLast = currentIdx === GUIDES.length - 1;
-  const completedCount = GUIDES.filter(g => completedIds.has(g.id)).length;
+  const guide = guides.find(g => g.id === selectedId) ?? guides[0];
+  const isCompleted = selectedId ? completedIds.has(selectedId) : false;
+  const currentIdx = guides.findIndex(g => g.id === selectedId);
+  const isLast = currentIdx === guides.length - 1;
+  const completedCount = guides.filter(g => completedIds.has(g.id)).length;
+  const currentMarkdown = selectedId ? (contentCache.get(selectedId) ?? null) : null;
+
+  // ── Empty state ──────────────────────────────────────────────────────────
+  if (guides.length === 0) {
+    return (
+      <main className="flex-1 overflow-y-auto min-w-0 flex flex-col">
+        <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-5 shrink-0">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-primary-blue/25 uppercase mb-1.5 sm:mb-2">
+            Orientation Dashboard · Ashoka University
+          </p>
+          <h1
+            className="text-3xl sm:text-4xl font-bold text-primary-blue leading-tight"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Welcome to Ashoka.
+          </h1>
+        </div>
+        <div className="mx-4 sm:mx-8 mb-6 flex flex-col items-center justify-center rounded-2xl border border-primary-blue/8 bg-white/40 py-16 text-center">
+          <span className="text-4xl mb-4" aria-hidden>📖</span>
+          <h2 className="text-lg font-semibold text-primary-blue/60 mb-2" style={{ fontFamily: "var(--font-display)" }}>
+            Guides coming soon
+          </h2>
+          <p className="text-sm text-primary-blue/35 max-w-[30ch]">
+            Orientation guides are being prepared. Check back shortly.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -576,7 +536,7 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
               <div className="h-0.5 bg-primary-blue/5">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: `${(completedCount / GUIDES.length) * 100}%` }}
+                  style={{ width: `${guides.length > 0 ? (completedCount / guides.length) * 100 : 0}%` }}
                 />
               </div>
 
@@ -585,14 +545,14 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                 className="flex overflow-x-auto scrollbar-none px-3 py-2 gap-1.5"
                 style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
               >
-                {GUIDES.map(({ id, icon: NavIcon, label }) => {
+                {guides.map(({ id, iconName, label }) => {
                   const isActive = id === selectedId;
                   const isDone = completedIds.has(id);
                   return (
                     <button
                       key={id}
                       data-active={isActive}
-                      onClick={() => select(id)}
+                      onClick={() => { select(id); fetchContent(id); }}
                       className={[
                         "shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-150 relative whitespace-nowrap touch-manipulation z-0",
                         isActive
@@ -614,7 +574,7 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                           transition={{ type: "spring", stiffness: 350, damping: 30 }}
                         />
                       )}
-                      <NavIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-red" : ""}`} />
+                      <DynamicIcon name={iconName} className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-primary-red" : ""}`} />
                       {label}
                       {isDone && (
                         <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-500 ml-0.5" />
@@ -629,8 +589,8 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                   Guides
                 </p>
                 <span className="text-[9px] font-semibold text-primary-blue/30 tabular-nums">
-                  {completedCount}/{GUIDES.length}
-                  {completedCount === GUIDES.length && (
+                  {completedCount}/{guides.length}
+                  {guides.length > 0 && completedCount === guides.length && (
                     <span className="ml-1.5 text-emerald-600"> · All complete!</span>
                   )}
                 </span>
@@ -644,17 +604,17 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                   Guides
                 </p>
                 <span className="text-[9px] font-semibold text-primary-blue/30 tabular-nums">
-                  {completedCount}/{GUIDES.length}
+                  {completedCount}/{guides.length}
                 </span>
               </div>
 
-              {GUIDES.map(({ id, icon: NavIcon, label }) => {
+              {guides.map(({ id, iconName, label }) => {
                 const isActive = id === selectedId;
                 const isDone = completedIds.has(id);
                 return (
                   <button
                     key={id}
-                    onClick={() => select(id)}
+                    onClick={() => { select(id); fetchContent(id); }}
                     className={[
                       "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150 relative z-0",
                       isActive
@@ -676,7 +636,7 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                         transition={{ type: "spring", stiffness: 350, damping: 30 }}
                       />
                     )}
-                    <NavIcon className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? "text-primary-red" : ""}`} />
+                    <DynamicIcon name={iconName} className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? "text-primary-red" : ""}`} />
                     <span className={`text-[13px] font-medium flex-1 ${isActive ? "text-primary-blue" : ""}`}>
                       {label}
                     </span>
@@ -691,10 +651,10 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                 <div className="w-full h-1 rounded-full bg-primary-blue/8 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                    style={{ width: `${(completedCount / GUIDES.length) * 100}%` }}
+                    style={{ width: `${guides.length > 0 ? (completedCount / guides.length) * 100 : 0}%` }}
                   />
                 </div>
-                {completedCount === GUIDES.length && (
+                {guides.length > 0 && completedCount === guides.length && (
                   <p className="text-[9px] text-emerald-600 font-semibold mt-1.5 text-center">
                     All guides complete!
                   </p>
@@ -713,39 +673,92 @@ export default function HomePageClient({ isOnboarded }: { isOnboarded: boolean }
                   onScroll={checkScroll}
                   className="flex-1 px-5 sm:px-8 py-5 sm:py-7 overflow-y-auto"
                 >
-                  <div className="flex items-start gap-3 sm:gap-4 mb-5 sm:mb-6">
-                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isCompleted ? "bg-emerald-50" : "bg-primary-red/8"}`}>
-                      {isCompleted
-                        ? <CheckCircle2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-500" />
-                        : <Icon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary-red" />
-                      }
+                  {guide && (
+                    <div className="flex items-start gap-3 sm:gap-4 mb-5 sm:mb-6">
+                      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isCompleted ? "bg-emerald-50" : "bg-primary-red/8"}`}>
+                        {isCompleted
+                          ? <CheckCircle2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-500" />
+                          : <DynamicIcon name={guide.iconName} className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary-red" />
+                        }
+                      </div>
+                      <div className="min-w-0">
+                        <h2
+                          className="text-xl sm:text-2xl font-bold text-primary-blue leading-tight"
+                          style={{ fontFamily: "var(--font-display)" }}
+                        >
+                          {guide.title}
+                        </h2>
+                        {guide.description && (
+                          <p className="text-sm text-primary-blue/40 mt-0.5 sm:mt-1 leading-snug">{guide.description}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h2
-                        className="text-xl sm:text-2xl font-bold text-primary-blue leading-tight"
-                        style={{ fontFamily: "var(--font-display)" }}
-                      >
-                        {guide.title}
-                      </h2>
-                      <p className="text-sm text-primary-blue/40 mt-0.5 sm:mt-1 leading-snug">{guide.description}</p>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="w-full h-px bg-primary-blue/6 mb-5 sm:mb-6" />
 
-                  <ol className="space-y-0">
-                    {guide.items.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-3 sm:gap-4 py-3 sm:py-3.5 border-b border-primary-blue/5 last:border-none"
-                      >
-                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary-blue/6 text-primary-blue/50 text-[10px] sm:text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5 tabular-nums">
-                          {idx + 1}
-                        </span>
-                        <span className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed">{item}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  {/* ── Markdown content ── */}
+                  {contentLoading && !currentMarkdown ? (
+                    <div className="space-y-3 animate-pulse" aria-busy="true" aria-label="Loading guide content">
+                      {["80%", "65%", "90%", "55%", "75%"].map((w, i) => (
+                        <div key={i} className="h-3 rounded-full bg-primary-blue/8" style={{ width: w }} />
+                      ))}
+                    </div>
+                  ) : currentMarkdown ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => (
+                          <h3 className="text-lg font-bold text-primary-blue mt-5 mb-2 first:mt-0" style={{ fontFamily: "var(--font-display)" }}>{children}</h3>
+                        ),
+                        h2: ({ children }) => (
+                          <h4 className="text-[15px] font-semibold text-primary-blue mt-4 mb-1.5 first:mt-0">{children}</h4>
+                        ),
+                        h3: ({ children }) => (
+                          <h5 className="text-[13.5px] font-semibold text-primary-blue/70 mt-3 mb-1 first:mt-0">{children}</h5>
+                        ),
+                        p: ({ children }) => (
+                          <p className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed mb-3">{children}</p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="space-y-0 mb-3">{children}</ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="space-y-0 mb-3">{children}</ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="flex items-start gap-3 sm:gap-4 py-2.5 sm:py-3 border-b border-primary-blue/5 last:border-none">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-red/50 shrink-0 mt-[0.45em]" />
+                            <span className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed">{children}</span>
+                          </li>
+                        ),
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-2 border-primary-red/30 pl-4 my-3 text-primary-blue/55 italic text-[13px]">{children}</blockquote>
+                        ),
+                        code: ({ children, className }) => {
+                          const isBlock = className?.startsWith("language-");
+                          return isBlock ? (
+                            <code className="block bg-primary-blue/4 rounded-lg px-4 py-3 text-[12px] font-mono text-primary-blue/70 overflow-x-auto my-3 whitespace-pre">{children}</code>
+                          ) : (
+                            <code className="bg-primary-blue/6 rounded px-1.5 py-0.5 text-[12px] font-mono text-primary-blue/70">{children}</code>
+                          );
+                        },
+                        hr: () => (
+                          <hr className="border-none h-px bg-primary-blue/8 my-5" />
+                        ),
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-red underline underline-offset-2 hover:text-primary-red/70 transition-colors">{children}</a>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-semibold text-primary-blue/90">{children}</strong>
+                        ),
+                      }}
+                    >
+                      {currentMarkdown}
+                    </ReactMarkdown>
+                  ) : (
+                    <p className="text-[13px] text-primary-blue/30 italic">No content available for this guide.</p>
+                  )}
                 </div>
 
                 <div
