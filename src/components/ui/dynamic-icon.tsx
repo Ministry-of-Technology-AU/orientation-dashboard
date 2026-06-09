@@ -22,7 +22,7 @@ const iconCache = new Map<string, React.ComponentType<LucideProps>>();
 
 export function DynamicIcon({ name, ...props }: DynamicIconProps) {
   const normalizedName = useMemo(() => normalizeIconName(name), [name]);
-  
+
   if (!iconCache.has(normalizedName)) {
     // @ts-expect-error dynamicIconImports keys are strictly typed
     const importFn = dynamicIconImports[normalizedName];

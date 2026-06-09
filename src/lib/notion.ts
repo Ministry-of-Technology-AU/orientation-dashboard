@@ -230,28 +230,39 @@ function blockToMarkdown(block: BlockObjectResponse): string {
       const code = richToMd(data?.rich_text);
       return `\`\`\`${lang}\n${code}\n\`\`\`\n`;
     }
+    case "to_do":
+      return `- [${data?.checked ? "x" : " "}] ${richToMd(data?.rich_text)}\n`;
+    case "toggle":
+      return `▶ **${richToMd(data?.rich_text)}**\n`;
+    case "callout": {
+      const emoji = data?.icon?.type === "emoji" ? data.icon.emoji : "💡";
+      return `> ${emoji} ${richToMd(data?.rich_text)}\n`;
+    }
+    case "image": {
+      const url = data?.type === "external" ? data.external?.url : data?.file?.url;
+      if (url) {
+        return `![Image](${url})\n`;
+      }
+      return "";
+    }
     case "divider":
       return `---\n`;
     default:
-      // Unsupported block types (toggles, columns, embeds, etc.) — skip silently
+      // Unsupported block types (columns, embeds, etc.) — skip silently
       return "";
   }
 }
 
 /**
- * Fetch the block children for a single Notion page and convert to markdown.
- * Handles pagination automatically.
+ * Fetch blocks recursively including child blocks, with appropriate indentation for nested structures.
  */
-export async function getGuideContent(pageId: string): Promise<string> {
-  const notion = getClient();
-
+async function getBlocksContent(notion: Client, blockId: string, depth = 0): Promise<string> {
   const blocks: BlockObjectResponse[] = [];
   let cursor: string | undefined = undefined;
 
-  // Paginate through all blocks (Notion returns max 100 per request)
   do {
     const response = await notion.blocks.children.list({
-      block_id: pageId,
+      block_id: blockId,
       page_size: 100,
       ...(cursor ? { start_cursor: cursor } : {}),
     });
@@ -265,13 +276,37 @@ export async function getGuideContent(pageId: string): Promise<string> {
     cursor = response.has_more ? (response.next_cursor ?? undefined) : undefined;
   } while (cursor);
 
-  if (blocks.length === 0) return "";
-
   const lines: string[] = [];
+  const indent = "  ".repeat(depth);
+
   for (const block of blocks) {
     const md = blockToMarkdown(block);
-    if (md) lines.push(md);
+    if (md) {
+      // Indent each non-empty line of the block markdown to preserve nesting
+      const indentedMd = md
+        .split("\n")
+        .map((line) => (line.trim() ? indent + line : ""))
+        .join("\n");
+      
+      lines.push(indentedMd);
+    }
+
+    if (block.has_children) {
+      const childContent = await getBlocksContent(notion, block.id, depth + 1);
+      if (childContent) {
+        lines.push(childContent);
+      }
+    }
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Fetch the block children for a single Notion page and convert to markdown.
+ * Handles pagination and nested blocks automatically.
+ */
+export async function getGuideContent(pageId: string): Promise<string> {
+  const notion = getClient();
+  return getBlocksContent(notion, pageId, 0);
 }

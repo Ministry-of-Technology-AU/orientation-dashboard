@@ -25,6 +25,54 @@ function saveCompleted(set: Set<string>) {
   localStorage.setItem("orientation-guides-completed", JSON.stringify([...set]));
 }
 
+function InteractiveCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
+  const [checked, setChecked] = useState(defaultChecked);
+  const haptic = useWebHaptics();
+
+  useEffect(() => {
+    setChecked(defaultChecked);
+  }, [defaultChecked]);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nextChecked = !checked;
+    setChecked(nextChecked);
+    if (nextChecked) {
+      haptic.trigger("success");
+    } else {
+      haptic.trigger("light");
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={toggle}
+      className={cn(
+        "peer h-5 w-5 shrink-0 rounded border-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center transition-all duration-200 align-middle -mt-0.5 mr-2.5 cursor-pointer select-none",
+        checked
+          ? "bg-primary-blue border-primary-blue text-[#FAF6F0]"
+          : "border-primary-blue/20 bg-transparent hover:border-primary-blue/40 hover:bg-primary-blue/5"
+      )}
+    >
+      {checked && (
+        <svg
+          className="w-3.5 h-3.5 fill-none stroke-current animate-in fade-in zoom-in-75 duration-100"
+          strokeWidth={3.5}
+          viewBox="0 0 24 24"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 type Phase = "splash" | "settling" | "done";
 
 export default function HomePageClient({
@@ -599,7 +647,7 @@ export default function HomePageClient({
 
             {/* ── DESKTOP: vertical left nav ── */}
             <nav className="hidden md:flex w-48 shrink-0 border-r border-primary-blue/8 py-3 flex-col">
-              <div className="px-4 pb-2 flex items-center justify-between">
+              <div className="px-4 pb-2 flex items-center justify-between shrink-0">
                 <p className="text-[9px] font-black tracking-[0.2em] text-primary-blue/25 uppercase">
                   Guides
                 </p>
@@ -608,46 +656,48 @@ export default function HomePageClient({
                 </span>
               </div>
 
-              {guides.map(({ id, iconName, label }) => {
-                const isActive = id === selectedId;
-                const isDone = completedIds.has(id);
-                return (
-                  <button
-                    key={id}
-                    onClick={() => { select(id); fetchContent(id); }}
-                    className={[
-                      "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150 relative z-0",
-                      isActive
-                        ? "text-primary-blue"
-                        : "text-primary-blue/40 hover:text-primary-blue/70 hover:bg-primary-blue/4",
-                    ].join(" ")}
-                  >
-                    {isActive && (
-                      <motion.span
-                        layoutId="activeGuideTabDesktopBg"
-                        className="absolute inset-0 bg-primary-blue/4 rounded-xl -z-10"
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                      />
-                    )}
-                    {isActive && (
-                      <motion.span
-                        layoutId="activeGuideTabDesktopIndicator"
-                        className="absolute left-0 inset-y-1.5 w-0.75 rounded-r-full bg-primary-red"
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                      />
-                    )}
-                    <DynamicIcon name={iconName} className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? "text-primary-red" : ""}`} />
-                    <span className={`text-[13px] font-medium flex-1 ${isActive ? "text-primary-blue" : ""}`}>
-                      {label}
-                    </span>
-                    {isDone && (
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
-                    )}
-                  </button>
-                );
-              })}
+              <div className="flex-1 overflow-y-auto scrollbar-none py-1">
+                {guides.map(({ id, iconName, label }) => {
+                  const isActive = id === selectedId;
+                  const isDone = completedIds.has(id);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => { select(id); fetchContent(id); }}
+                      className={[
+                        "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-150 relative z-0",
+                        isActive
+                          ? "text-primary-blue"
+                          : "text-primary-blue/40 hover:text-primary-blue/70 hover:bg-primary-blue/4",
+                      ].join(" ")}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="activeGuideTabDesktopBg"
+                          className="absolute inset-0 bg-primary-blue/4 rounded-xl -z-10"
+                          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                        />
+                      )}
+                      {isActive && (
+                        <motion.span
+                          layoutId="activeGuideTabDesktopIndicator"
+                          className="absolute left-0 inset-y-1.5 w-0.75 rounded-r-full bg-primary-red"
+                          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                        />
+                      )}
+                      <DynamicIcon name={iconName} className={`w-3.5 h-3.5 shrink-0 transition-colors ${isActive ? "text-primary-red" : ""}`} />
+                      <span className={`text-[13px] font-medium flex-1 ${isActive ? "text-primary-blue" : ""}`}>
+                        {label}
+                      </span>
+                      {isDone && (
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-              <div className="mt-auto px-4 pt-3 pb-2">
+              <div className="mt-auto px-4 pt-3 pb-2 shrink-0">
                 <div className="w-full h-1 rounded-full bg-primary-blue/8 overflow-hidden">
                   <div
                     className="h-full rounded-full bg-emerald-500 transition-all duration-500"
@@ -721,17 +771,38 @@ export default function HomePageClient({
                           <p className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed mb-3">{children}</p>
                         ),
                         ul: ({ children }) => (
-                          <ul className="space-y-0 mb-3">{children}</ul>
+                          <ul className="pl-5 space-y-0 mb-3">{children}</ul>
                         ),
                         ol: ({ children }) => (
-                          <ol className="space-y-0 mb-3">{children}</ol>
+                          <ol className="pl-5 space-y-0 mb-3">{children}</ol>
                         ),
-                        li: ({ children }) => (
-                          <li className="flex items-start gap-3 sm:gap-4 py-2.5 sm:py-3 border-b border-primary-blue/5 last:border-none">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary-red/50 shrink-0 mt-[0.45em]" />
-                            <span className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed">{children}</span>
-                          </li>
-                        ),
+                        li: ({ children, checked, className, ...props }: any) => {
+                          const isCheckbox = checked !== undefined || className?.includes("task-list-item");
+                          return (
+                            <li
+                              className={cn(
+                                "flex items-start gap-3 sm:gap-4 py-2.5 sm:py-3 border-b border-primary-blue/5 last:border-none [&_li]:border-none [&_li]:py-1.5 [&_li]:sm:py-2",
+                                isCheckbox && "list-none"
+                              )}
+                              {...props}
+                            >
+                              {!isCheckbox && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary-red/50 shrink-0 mt-[0.45em]" />
+                              )}
+                              <div className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed flex-1">
+                                {children}
+                              </div>
+                            </li>
+                          );
+                        },
+                        input: ({ checked, type }: any) => {
+                          if (type === "checkbox") {
+                            return (
+                              <InteractiveCheckbox defaultChecked={!!checked} />
+                            );
+                          }
+                          return null;
+                        },
                         blockquote: ({ children }) => (
                           <blockquote className="border-l-2 border-primary-red/30 pl-4 my-3 text-primary-blue/55 italic text-[13px]">{children}</blockquote>
                         ),
