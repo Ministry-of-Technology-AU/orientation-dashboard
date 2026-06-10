@@ -134,7 +134,7 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
 
   return (
     <>
-    <div className="flex flex-col h-full flex-1 overflow-hidden">
+      <div className="flex flex-col h-full flex-1 overflow-hidden">
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader size={80} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { TempLoader } from "@/components/temp-loader";
+import { Loader } from "@/components/loader";
 
 export default function TestLoaderPage() {
   return (
@@ -12,7 +12,7 @@ export default function TestLoaderPage() {
       backgroundColor: "#ffffffff",
       color: "#3b82f6"
     }}>
-      <TempLoader />
+      <Loader />
     </div>
   );
 }
