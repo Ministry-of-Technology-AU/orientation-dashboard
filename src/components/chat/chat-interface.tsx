@@ -371,7 +371,7 @@ function TicketModalDialog({
         {/* Body */}
         <div className="px-6 py-5 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-primary-blue/50 uppercase tracking-[0.1em]">
+            <label className="text-[11px] font-semibold text-primary-blue/50 uppercase tracking-widest">
               Subject
             </label>
             <input
@@ -384,7 +384,7 @@ function TicketModalDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-primary-blue/50 uppercase tracking-[0.1em]">
+            <label className="text-[11px] font-semibold text-primary-blue/50 uppercase tracking-widest">
               Your Message
             </label>
             <textarea
