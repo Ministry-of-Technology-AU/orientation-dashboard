@@ -140,22 +140,22 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
           <Loader size={80} />
         </div>
       ) : isEmpty ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-          <div className="flex flex-col items-center gap-3">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 gap-5 md:gap-6">
+          <div className="flex flex-col items-center gap-2.5 md:gap-3">
             <Image
               src="/bijlee_face.png"
               alt="Bijlee"
-              width={88}
-              height={88}
-              className="drop-shadow-sm"
+              width={72}
+              height={72}
+              className="drop-shadow-sm md:w-22 md:h-22"
             />
             <h2
-              className="text-3xl font-bold text-primary-blue"
+              className="text-2xl md:text-3xl font-bold text-primary-blue text-center"
               style={{ fontFamily: "var(--font-display)" }}
             >
               Hey! How can I help you?
             </h2>
-            <p className="text-sm text-primary-blue/50">
+            <p className="text-sm text-primary-blue/50 text-center">
               Ask me anything about Ashoka University
             </p>
           </div>
@@ -171,12 +171,12 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+          <div className="flex-1 overflow-y-auto px-3 py-4 md:px-5 md:py-5 flex flex-col gap-4">
             {messages.map((msg) =>
               msg.role === "user" ? (
                 /* User bubble — right, with avatar */
                 <div key={msg.id} className="flex justify-end items-end gap-2">
-                  <div className="max-w-[65%] bg-primary-blue text-white text-sm leading-relaxed px-4 py-2.5 rounded-2xl rounded-br-sm whitespace-pre-wrap">
+                  <div className="max-w-[82%] md:max-w-[65%] bg-primary-blue text-white text-sm leading-relaxed px-4 py-2.5 rounded-2xl rounded-br-sm whitespace-pre-wrap">
                     {msg.content}
                   </div>
                   <UserAvatar image={userImage} name={userName} />
@@ -188,7 +188,7 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
                     <BijleeAvatar />
                     <div
                       className={cn(
-                        "max-w-[75%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed",
+                        "max-w-[88%] md:max-w-[75%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed",
                         msg.error
                           ? "bg-red-tint text-primary-red border border-primary-red/20"
                           : "bg-white text-gray-800 shadow-sm border border-primary-blue/8"
@@ -231,7 +231,7 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
             <div ref={bottomRef} />
           </div>
 
-          <div className="px-5 pb-5 pt-2">
+          <div className="px-3 pb-4 pt-2 md:px-5 md:pb-5">
             <ChatInput
               value={input}
               onChange={setInput}
@@ -344,11 +344,11 @@ function TicketModalDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(10,56,100,0.18)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary-blue/8">
           <div className="flex items-center gap-2.5">

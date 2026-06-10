@@ -100,8 +100,13 @@ export default function HomePageClient({
   // Ref for the mobile tab bar — auto-scroll active tab into view
   const tabBarRef = useRef<HTMLDivElement>(null);
 
-  // Welcome card collapse state (starts expanded by default)
+  // Welcome card collapse state — expanded on desktop, collapsed on mobile
   const [isWelcomeCollapsed, setIsWelcomeCollapsed] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setIsWelcomeCollapsed(true);
+    }
+  }, []);
 
   // Scroll tracking for container
   const contentScrollRef = useRef<HTMLDivElement>(null);
@@ -492,7 +497,7 @@ export default function HomePageClient({
                 haptic.trigger("light");
                 setIsWelcomeCollapsed(!isWelcomeCollapsed);
               }}
-              className="relative flex items-center justify-between gap-4 px-5 py-4 cursor-pointer hover:bg-black/[0.01] transition-colors select-none"
+              className="relative flex items-center justify-between gap-4 px-5 py-4 cursor-pointer hover:bg-black/1 transition-colors select-none"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex flex-col items-center justify-center gap-0.5 shrink-0"
@@ -714,14 +719,14 @@ export default function HomePageClient({
 
             {/* ── Content panel (shared mobile + desktop) ── */}
             <div
-              className="flex-1 flex flex-col overflow-hidden transition-opacity"
+              className="flex-1 min-w-0 flex flex-col overflow-hidden transition-opacity"
               style={{ opacity: visible ? 1 : 0, transitionDuration: "180ms" }}
             >
               <div className="flex-1 relative flex flex-col min-h-0">
                 <div
                   ref={contentScrollRef}
                   onScroll={checkScroll}
-                  className="flex-1 px-5 sm:px-8 py-5 sm:py-7 overflow-y-auto"
+                  className="flex-1 px-5 sm:px-8 py-5 sm:py-7 overflow-y-auto overflow-x-hidden"
                 >
                   {guide && (
                     <div className="flex items-start gap-3 sm:gap-4 mb-5 sm:mb-6">
@@ -789,7 +794,7 @@ export default function HomePageClient({
                               {!isCheckbox && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-primary-red/50 shrink-0 mt-[0.45em]" />
                               )}
-                              <div className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed flex-1">
+                              <div className="text-[13px] sm:text-[13.5px] text-primary-blue/75 leading-relaxed flex-1 min-w-0 wrap-break-word">
                                 {children}
                               </div>
                             </li>
@@ -809,7 +814,7 @@ export default function HomePageClient({
                         code: ({ children, className }) => {
                           const isBlock = className?.startsWith("language-");
                           return isBlock ? (
-                            <code className="block bg-primary-blue/4 rounded-lg px-4 py-3 text-[12px] font-mono text-primary-blue/70 overflow-x-auto my-3 whitespace-pre">{children}</code>
+                            <code className="block bg-primary-blue/4 rounded-lg px-4 py-3 text-[12px] font-mono text-primary-blue/70 my-3 whitespace-pre-wrap break-all">{children}</code>
                           ) : (
                             <code className="bg-primary-blue/6 rounded px-1.5 py-0.5 text-[12px] font-mono text-primary-blue/70">{children}</code>
                           );
@@ -818,7 +823,7 @@ export default function HomePageClient({
                           <hr className="border-none h-px bg-primary-blue/8 my-5" />
                         ),
                         a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-red underline underline-offset-2 hover:text-primary-red/70 transition-colors">{children}</a>
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-red underline underline-offset-2 hover:text-primary-red/70 transition-colors wrap-break-word">{children}</a>
                         ),
                         strong: ({ children }) => (
                           <strong className="font-semibold text-primary-blue/90">{children}</strong>
