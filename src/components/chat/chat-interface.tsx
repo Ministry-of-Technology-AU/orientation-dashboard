@@ -183,22 +183,31 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
                 </div>
               ) : (
                 /* Assistant bubble — left, with Bijlee avatar */
-                <div key={msg.id} className="flex justify-start items-end gap-2">
-                  <BijleeAvatar />
-                  <div
-                    className={cn(
-                      "max-w-[75%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed",
-                      msg.error
-                        ? "bg-red-tint text-primary-red border border-primary-red/20"
-                        : "bg-white text-gray-800 shadow-sm border border-primary-blue/8"
-                    )}
-                  >
-                    {msg.error ? (
-                      msg.content
-                    ) : (
-                      <MarkdownContent content={msg.content} />
-                    )}
+                <div key={msg.id} className="flex flex-col mb-1">
+                  <div className="flex justify-start items-end gap-2">
+                    <BijleeAvatar />
+                    <div
+                      className={cn(
+                        "max-w-[75%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed",
+                        msg.error
+                          ? "bg-red-tint text-primary-red border border-primary-red/20"
+                          : "bg-white text-gray-800 shadow-sm border border-primary-blue/8"
+                      )}
+                    >
+                      {msg.error ? (
+                        msg.content
+                      ) : (
+                        <MarkdownContent content={msg.content} />
+                      )}
+                    </div>
                   </div>
+                  {!msg.error && (
+                    <FeedbackRow
+                      state={feedback[msg.id] ?? "none"}
+                      onGood={() => markGood(msg.id)}
+                      onRaiseTicket={() => openTicket(msg)}
+                    />
+                  )}
                 </div>
               )
             )}
@@ -236,16 +245,14 @@ export function ChatInterface({ conversationId, onConversationCreated, userImage
       )}
     </div>
 
-      {
-    ticketModal && (
-      <TicketModalDialog
-        aiResponse={ticketModal.aiResponse}
-        messageId={ticketModal.messageId}
-        onClose={() => setTicketModal(null)}
-        onSuccess={onTicketRaised}
-      />
-    )
-  }
+      {ticketModal && (
+        <TicketModalDialog
+          aiResponse={ticketModal.aiResponse}
+          messageId={ticketModal.messageId}
+          onClose={() => setTicketModal(null)}
+          onSuccess={onTicketRaised}
+        />
+      )}
     </>
   );
 }
