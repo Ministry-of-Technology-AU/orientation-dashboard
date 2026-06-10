@@ -13,11 +13,36 @@ function gwHeaders(email: string) {
 }
 
 async function gw(path: string, email: string, init?: RequestInit) {
-  const res = await fetch(`${GATEWAY}${path}`, {
-    ...init,
-    headers: { ...gwHeaders(email), ...init?.headers },
-  });
-  const body = await res.json();
+  const url = `${GATEWAY}${path}`;
+  const method = init?.method ?? "GET";
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: { ...gwHeaders(email), ...init?.headers },
+    });
+  } catch (err) {
+    console.error(`[gateway] ${method} ${path} — network error:`, err);
+    throw err;
+  }
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    body = null;
+  }
+
+  if (!res.ok) {
+    console.error(
+      `[gateway] ${method} ${path} — HTTP ${res.status}:`,
+      JSON.stringify(body)
+    );
+  } else {
+    console.log(`[gateway] ${method} ${path} — OK ${res.status}`);
+  }
+
   return { ok: res.ok, status: res.status, body };
 }
 
@@ -41,8 +66,9 @@ export async function POST(req: Request) {
       method: "POST",
       body: JSON.stringify({ title: message.slice(0, 80) }),
     });
-    if (!conv.ok)
+    if (!conv.ok) {
       return NextResponse.json({ error: "Failed to create conversation" }, { status: 502 });
+    }
     convId = (conv.body as { id: number }).id;
   }
 
@@ -51,7 +77,15 @@ export async function POST(req: Request) {
     body: JSON.stringify({ query: message, conversation_id: convId }),
   });
 
-  if (!result.ok) return NextResponse.json({ error: "Query failed" }, { status: 502 });
+  if (!result.ok) {
+    const detail = (result.body as { detail?: string })?.detail ?? "unknown";
+    // Surface quota/rate-limit errors with a friendlier message
+    const isQuota = result.status === 429 || detail.includes("RESOURCE_EXHAUSTED") || detail.includes("quota");
+    return NextResponse.json(
+      { error: isQuota ? "AI service is temporarily unavailable. Please try again later." : "Query failed" },
+      { status: 502 }
+    );
+  }
 
   const body = result.body as { response: string };
   return NextResponse.json({
