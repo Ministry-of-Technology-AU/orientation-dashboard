@@ -35,5 +35,5 @@ export default async function HomePage() {
     console.error("Error fetching guides from Notion:", error);
   }
 
-  return <HomePageClient isOnboarded={isOnboarded} guides={guides} />;
+  return <HomePageClient isOnboarded={isOnboarded} guides={guides} userName={session.user.name ?? null} />;
 }
