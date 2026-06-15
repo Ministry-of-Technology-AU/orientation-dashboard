@@ -43,7 +43,7 @@ function getGreeting(): string {
 // ── Level label ──────────────────────────────────────────────────────────────
 function getLevelLabel(pct: number): { icon: string; label: string } {
   if (pct === 0) return { icon: "🌱", label: "Just Getting Started" };
-  if (pct < 50)  return { icon: "🌿", label: "Finding Your Way" };
+  if (pct < 50) return { icon: "🌿", label: "Finding Your Way" };
   if (pct < 100) return { icon: "🌳", label: "Almost There" };
   return { icon: "🎓", label: "Ashoka Ready!" };
 }
@@ -189,13 +189,13 @@ export default function HomePageClient({
     if (!isOnboarded) {
       try {
         if (localStorage.getItem("orientation-hub-onboarded") === "true") setPhase("done");
-      } catch {}
+      } catch { }
     }
   }, [isOnboarded]);
 
   useEffect(() => {
     if (isOnboarded) {
-      try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch {}
+      try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch { }
     }
   }, [isOnboarded]);
 
@@ -204,14 +204,14 @@ export default function HomePageClient({
       const raw = localStorage.getItem("onboarding_answers");
       if (!raw) return;
       const answers: Record<string, string | string[]> = JSON.parse(raw);
-      const petName    = typeof answers.name  === "string" ? answers.name  : undefined;
-      const city       = typeof answers.city  === "string" ? answers.city  : undefined;
+      const petName = typeof answers.name === "string" ? answers.name : undefined;
+      const city = typeof answers.city === "string" ? answers.city : undefined;
       const phoneNumber = typeof answers.phone === "string" ? answers.phone : undefined;
-      const interests  = { question1: Array.isArray(answers.interests) ? answers.interests : [], question2: Array.isArray(answers.hobbies) ? answers.hobbies : [] };
+      const interests = { question1: Array.isArray(answers.interests) ? answers.interests : [], question2: Array.isArray(answers.hobbies) ? answers.hobbies : [] };
       fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ petName, city, phoneNumber, interests, isOnboarded: true }) })
         .then(res => res.ok && localStorage.removeItem("onboarding_answers"))
         .catch(err => console.error("Failed to sync onboarding answers:", err));
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function HomePageClient({
     if (!canContinue) return;
     haptic.trigger("medium");
     setPhase("settling");
-    try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch {}
+    try { localStorage.setItem("orientation-hub-onboarded", "true"); } catch { }
     fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isOnboarded: true }) })
       .catch(err => console.error("Error setting onboarding complete:", err));
     setTimeout(() => setPhase("done"), 900);
@@ -448,7 +448,7 @@ export default function HomePageClient({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="hidden md:block mx-4 sm:mx-8 mb-4 sm:mb-5 shrink-0"
+          className="mx-4 sm:mx-8 mb-4 sm:mb-5 shrink-0"
         >
           <div className="relative rounded-2xl overflow-hidden border border-primary-red/15 bg-gradient-to-br from-red-tint/80 to-blue-tint/50 shadow-[0_4px_16px_rgba(166,16,23,0.06)]">
             <div aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-red/50 to-primary-red/10 rounded-l-sm" />
@@ -495,72 +495,10 @@ export default function HomePageClient({
           </div>
         </motion.div>
 
-        {/* ── GUIDE CARD GRID ──────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.14, ease: [0.22, 1, 0.36, 1] }}
-          className="px-4 sm:px-8 mb-4 sm:mb-5 shrink-0"
-        >
-          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-            {guides.map((g, i) => {
-              const isActive = g.id === selectedId;
-              const isDone = completedIds.has(g.id);
-              const mascot = MASCOT_IMAGES[i % MASCOT_IMAGES.length];
-              return (
-                <motion.button
-                  key={g.id}
-                  onClick={() => { select(g.id); fetchContent(g.id); setTimeout(scrollToReader, 300); }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className={cn(
-                    "flex-shrink-0 w-36 sm:w-40 rounded-2xl p-3 text-left transition-all duration-200 cursor-pointer relative overflow-hidden",
-                    isActive
-                      ? "bg-primary-blue text-white shadow-[0_8px_20px_rgba(10,56,100,0.2)] scale-[1.02] border border-primary-blue"
-                      : "bg-white/80 border border-primary-blue/15 hover:border-primary-blue/30 hover:bg-blue-tint/50 shadow-sm"
-                  )}
-                  style={{
-                    animation: `card-entrance 0.4s ${i * 60}ms cubic-bezier(0.22,1,0.36,1) both`,
-                  }}
-                >
-                  {/* Cover image or mascot */}
-                  <div className={cn("w-full h-20 rounded-xl mb-2.5 overflow-hidden flex items-center justify-center", isActive ? "bg-white/15" : "bg-primary-blue/5")}>
-                    {g.coverImage ? (
-                      <img src={g.coverImage} alt={g.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <Image src={mascot} alt="Bijlee" width={60} height={60} className="object-contain" />
-                    )}
-                  </div>
-
-                  <div className={cn("text-[9px] font-bold tracking-[0.14em] uppercase mb-1", isActive ? "text-white/60" : "text-primary-blue/35")}>
-                    Guide {i + 1}
-                  </div>
-                  <p className={cn("text-[12px] font-semibold leading-snug line-clamp-2", isActive ? "text-white" : "text-primary-blue")}>
-                    {g.label}
-                  </p>
-
-                  {/* Status dot */}
-                  <div className="flex items-center gap-1 mt-1.5">
-                    {isDone ? (
-                      <CheckCircle2 className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-emerald-300" : "text-emerald-500")} />
-                    ) : (
-                      <Circle className={cn("w-3.5 h-3.5 shrink-0", isActive ? "text-white/40" : "text-primary-blue/20")} />
-                    )}
-                    <span className={cn("text-[10px]", isActive ? (isDone ? "text-emerald-300" : "text-white/50") : (isDone ? "text-emerald-600" : "text-primary-blue/35"))}>
-                      {isDone ? "Done" : "To read"}
-                    </span>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
-
         {/* ── GUIDE READER ─────────────────────────────────────────────────────── */}
-        <TourStep id="home-guides" title="Orientation Guides" content="Read through each guide carefully — they cover everything you need before and after arriving on campus. Mark each one complete as you go." order={8} position="top" className="mx-4 sm:mx-8 mb-6 sm:mb-8 flex flex-col flex-1 min-h-0 relative z-10">
+        <TourStep id="home-guides" title="Orientation Guides" content="Read through each guide carefully — they cover everything you need before and after arriving on campus. Mark each one complete as you go." order={8} position="top" className="mx-4 sm:mx-8 mb-6 sm:mb-8 flex flex-col flex-1 min-h-[500px] md:min-h-[600px] relative z-10">
 
-          <div ref={guideReaderRef} className="flex flex-col md:flex-row w-full rounded-2xl border-2 border-primary-blue/15 bg-white/80 backdrop-blur-md overflow-hidden flex-1 min-h-0 shadow-[0_8px_30px_rgba(10,56,100,0.06)] relative">
+          <div ref={guideReaderRef} className="flex flex-col md:flex-row w-full rounded-2xl border-2 border-primary-blue/15 bg-white/80 backdrop-blur-md overflow-hidden flex-1 min-h-[500px] md:min-h-[600px] shadow-[0_8px_30px_rgba(10,56,100,0.06)] relative">
 
             {/* ── MOBILE: horizontal tab strip ── */}
             <div className="md:hidden shrink-0 border-b border-primary-blue/8 bg-white/30">
@@ -644,9 +582,22 @@ export default function HomePageClient({
                 <div ref={contentScrollRef} onScroll={checkScroll} className="flex-1 px-5 sm:px-8 py-5 sm:py-7 overflow-y-auto overflow-x-hidden">
 
                   {guide && (
-                    <div className="flex flex-row items-center gap-3 sm:gap-6 p-4 sm:p-6 mb-4 sm:mb-8 rounded-2xl bg-gradient-to-r from-blue-tint/60 to-white border border-primary-blue/10 shadow-sm relative overflow-hidden">
-                      
-                      {/* Interactive Mascot in header */}
+                    <div
+                      className={cn(
+                        "flex flex-row items-center gap-3 sm:gap-6 p-4 sm:p-6 mb-4 sm:mb-8 rounded-2xl border border-primary-blue/10 shadow-sm relative overflow-hidden",
+                        !guide.coverImage && "bg-gradient-to-r from-blue-tint/60 to-white"
+                      )}
+                      style={
+                        guide.coverImage
+                          ? {
+                              backgroundImage: `linear-gradient(to right, rgba(230, 237, 245, 0.75) 30%, rgba(255, 255, 255, 0.45) 100%), url(${guide.coverImage})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                            }
+                          : undefined
+                      }
+                    >
+
                       <div className="hidden sm:block shrink-0 relative z-10">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-md border-[3px] border-white overflow-hidden group hover:scale-105 transition-transform duration-300 cursor-pointer">
                           <Image
@@ -657,7 +608,7 @@ export default function HomePageClient({
                           />
                         </div>
                       </div>
-                      
+
                       <div className="min-w-0 flex-1 relative z-10">
                         <h2 className="text-xl sm:text-3xl font-extrabold text-primary-blue leading-tight tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
                           {guide.title}
