@@ -58,6 +58,8 @@ export interface GuideMeta {
   iconName: string;
   /** Display order (ascending) */
   order: number;
+  /** Cover image URL (from Notion page cover), if set */
+  coverImage?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -166,9 +168,21 @@ export async function getGuidesMeta(): Promise<GuideMeta[]> {
     if (page.object !== "page") continue;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const props = (page as any).properties as Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cover = (page as any).cover as any;
 
     const title = getTitle(props);
     if (!title) continue; // skip pages with no title
+
+    // Extract cover image URL (external or Notion-hosted file)
+    let coverImage: string | undefined;
+    if (cover) {
+      if (cover.type === "external" && cover.external?.url) {
+        coverImage = cover.external.url;
+      } else if (cover.type === "file" && cover.file?.url) {
+        coverImage = cover.file.url;
+      }
+    }
 
     guides.push({
       id: page.id,
@@ -177,6 +191,7 @@ export async function getGuidesMeta(): Promise<GuideMeta[]> {
       description: getRichText(props, "Description"),
       iconName: getSelect(props, "Icon") || "FileText",
       order: getNumber(props, "Order", guides.length + 1),
+      coverImage,
     });
   }
 
