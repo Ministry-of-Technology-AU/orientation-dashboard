@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
           className="fixed inset-0 -z-10 bg-neutral/80 backdrop-blur-[2px]"
         />
         {children}
+        <Toaster />
       </body>
     </html>
   );

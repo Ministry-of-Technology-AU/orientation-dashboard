@@ -1,26 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { CheckCircle2, XCircle, ArrowRight, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { QuizConfig } from "@/mock-data/modules";
+import { reportGameCompletion } from "@/lib/games-client";
 
-interface Props {
-  config: QuizConfig;
-  pointsValue: number;
-  moduleSlug: string;
+interface PublicQuizConfig {
+  questions: { q: string; options: string[] }[];
 }
 
-export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
+interface Props {
+  config: PublicQuizConfig;
+  pointsValue: number;
+  moduleId: string;
+}
+
+export function QuizGame({ config, pointsValue, moduleId }: Props) {
   const { questions } = config;
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [validated, setValidated] = useState<(boolean | null)[]>(() =>
+    Array.from({ length: questions.length }, () => null)
+  );
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const reportedRef = useRef(false);
+
+  // Persist completion + points once the quiz finishes (80%+ earns completion).
+  useEffect(() => {
+    if (!done || reportedRef.current) return;
+    reportedRef.current = true;
+    reportGameCompletion({
+      moduleId,
+      type: "quiz",
+      answers,
+    });
+  }, [done, answers, moduleId]);
 
   const question = questions[currentQ];
-  const isCorrect = selected === question?.answer;
+  const isCorrect = validated[currentQ] === true;
   const progress = ((currentQ) / questions.length) * 100;
 
   function handleSelect(option: string) {
@@ -28,10 +51,38 @@ export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
     setSelected(option);
   }
 
-  function handleConfirm() {
-    if (!selected) return;
-    if (isCorrect) setCorrectCount((c) => c + 1);
-    setConfirmed(true);
+  async function handleConfirm() {
+    if (!selected || validating) return;
+    setValidating(true);
+    setValidationError(null);
+    try {
+      const res = await fetch("/api/games/quiz-answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId, questionIndex: currentQ, answer: selected }),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const result = (await res.json()) as { correct?: boolean };
+      const correct = result.correct === true;
+
+      setAnswers((prev) => {
+        const next = [...prev];
+        next[currentQ] = selected;
+        return next;
+      });
+      setValidated((prev) => {
+        const next = [...prev];
+        next[currentQ] = correct;
+        return next;
+      });
+      if (correct) setCorrectCount((c) => c + 1);
+      setConfirmed(true);
+    } catch (error) {
+      console.error("Failed to validate quiz answer:", error);
+      setValidationError("Couldn't check that answer. Please try again.");
+    } finally {
+      setValidating(false);
+    }
   }
 
   function handleNext() {
@@ -44,8 +95,22 @@ export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
     }
   }
 
+  function handleRetry() {
+    reportedRef.current = false;
+    setCurrentQ(0);
+    setSelected(null);
+    setConfirmed(false);
+    setAnswers([]);
+    setValidated(Array.from({ length: questions.length }, () => null));
+    setCorrectCount(0);
+    setDone(false);
+    setValidating(false);
+    setValidationError(null);
+  }
+
   if (done) {
-    const earned = correctCount === questions.length ? pointsValue : 0;
+    const passed = questions.length > 0 && correctCount / questions.length >= 0.8;
+    const earned = passed ? pointsValue : 0;
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
         <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center">
@@ -58,15 +123,25 @@ export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
           <p className="text-gray-500 text-sm">
             {earned > 0
               ? `You earned ${earned} points!`
-              : `Answer all questions correctly to earn ${pointsValue} points.`}
+              : `Score at least 80% to complete this quiz and earn ${pointsValue} points.`}
           </p>
         </div>
-        <a
-          href={`/modules/${moduleSlug}`}
-          className="bg-[#0A3864] text-white rounded-xl px-6 py-2.5 text-sm font-medium hover:bg-[#1a5fa0] transition-colors"
-        >
-          Back to Module
-        </a>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {!passed && (
+            <button
+              onClick={handleRetry}
+              className="bg-[#A61017] text-white rounded-xl px-6 py-2.5 text-sm font-medium hover:bg-[#d44049] transition-colors"
+            >
+              Play Again
+            </button>
+          )}
+          <Link
+            href="/modules"
+            className="bg-[#0A3864] text-white rounded-xl px-6 py-2.5 text-sm font-medium hover:bg-[#1a5fa0] transition-colors"
+          >
+            Back to Modules
+          </Link>
+        </div>
       </div>
     );
   }
@@ -94,12 +169,11 @@ export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
       <div className="flex flex-col gap-2.5 mb-6">
         {question.options.map((opt) => {
           const isSelected = selected === opt;
-          const isAnswer = opt === question.answer;
           let style = "border-gray-200 bg-white text-gray-700 hover:border-[#0A3864]/30 hover:bg-blue-50/30";
 
           if (confirmed) {
-            if (isAnswer) style = "border-emerald-400 bg-emerald-50 text-emerald-800";
-            else if (isSelected && !isAnswer) style = "border-rose-400 bg-rose-50 text-rose-700";
+            if (isSelected && isCorrect) style = "border-emerald-400 bg-emerald-50 text-emerald-800";
+            else if (isSelected && !isCorrect) style = "border-rose-400 bg-rose-50 text-rose-700";
             else style = "border-gray-100 bg-gray-50 text-gray-400";
           } else if (isSelected) {
             style = "border-[#0A3864] bg-blue-50 text-[#0A3864]";
@@ -116,21 +190,24 @@ export function QuizGame({ config, pointsValue, moduleSlug }: Props) {
               )}
             >
               <span>{opt}</span>
-              {confirmed && isAnswer && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
-              {confirmed && isSelected && !isAnswer && <XCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+              {confirmed && isSelected && isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {confirmed && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-rose-500 shrink-0" />}
             </button>
           );
         })}
       </div>
+      {validationError && (
+        <p className="mb-3 text-xs font-medium text-rose-600">{validationError}</p>
+      )}
 
       {/* Actions */}
       {!confirmed ? (
         <button
           onClick={handleConfirm}
-          disabled={!selected}
+          disabled={!selected || validating}
           className="w-full bg-[#A61017] disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl py-3 text-sm font-medium hover:bg-[#d44049] transition-colors"
         >
-          Submit Answer
+          {validating ? "Checking..." : "Submit Answer"}
         </button>
       ) : (
         <button

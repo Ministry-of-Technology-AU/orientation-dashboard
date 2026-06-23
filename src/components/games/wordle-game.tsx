@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { reportGameCompletion } from "@/lib/games-client";
 import type { WordleConfig } from "@/mock-data/modules";
 
 type TileState = "correct" | "present" | "absent" | "empty" | "active";
@@ -45,10 +47,10 @@ function evaluateGuess(guess: string, word: string): TileState[] {
 interface Props {
   config: WordleConfig;
   pointsValue: number;
-  moduleSlug: string;
+  moduleId: string;
 }
 
-export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
+export function WordleGame({ config, pointsValue, moduleId }: Props) {
   const word = config.word.toUpperCase();
   const wordLen = word.length;
 
@@ -61,6 +63,7 @@ export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
   const [currentRow, setCurrentRow] = useState(0);
   const [currentInput, setCurrentInput] = useState("");
   const [usedKeys, setUsedKeys] = useState<Record<string, TileState>>({});
+  const [guesses, setGuesses] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [shake, setShake] = useState(false);
@@ -73,12 +76,14 @@ export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
     }
 
     const states = evaluateGuess(currentInput, word);
+    const newGuesses = [...guesses, currentInput];
     const newGrid = grid.map((row, ri) =>
       ri === currentRow
         ? currentInput.split("").map((letter, ci) => ({ letter, state: states[ci] }))
         : row
     );
     setGrid(newGrid);
+    setGuesses(newGuesses);
 
     const newUsed = { ...usedKeys };
     currentInput.split("").forEach((l, i) => {
@@ -94,7 +99,7 @@ export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
     else if (currentRow + 1 >= config.maxAttempts) { setGameOver(true); }
     else { setCurrentRow((r) => r + 1); }
     setCurrentInput("");
-  }, [currentInput, currentRow, grid, usedKeys, word, wordLen, config.maxAttempts]);
+  }, [currentInput, currentRow, grid, usedKeys, guesses, word, wordLen, config.maxAttempts]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver) return;
@@ -113,6 +118,18 @@ export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [handleKey]);
+
+  // Persist completion + points once the game ends (a win earns points).
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    if (!gameOver || reportedRef.current) return;
+    reportedRef.current = true;
+    reportGameCompletion({
+      moduleId,
+      type: "wordle",
+      guesses,
+    });
+  }, [gameOver, guesses, moduleId]);
 
   const displayGrid = grid.map((row, ri) => {
     if (ri === currentRow && !gameOver) {
@@ -171,12 +188,12 @@ export function WordleGame({ config, pointsValue, moduleSlug }: Props) {
           <p className="text-sm mt-0.5">
             {won ? `You earned ${pointsValue} points!` : "Better luck next time."}
           </p>
-          <a
-            href={`/modules/${moduleSlug}`}
+          <Link
+            href="/modules"
             className="inline-block mt-3 bg-[#0A3864] text-white rounded-xl px-5 py-2 text-sm font-medium hover:bg-[#1a5fa0] transition-colors"
           >
-            Back to Module
-          </a>
+            Back to Modules
+          </Link>
         </div>
       )}
 

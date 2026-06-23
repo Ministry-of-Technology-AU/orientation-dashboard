@@ -35,6 +35,12 @@ export interface MockModule {
   journeyMilestone: string | null;
   status: ModuleStatus;
   readPercent: number;
+  /** Whether the student has read the module (drives game unlocking). Populated server-side from the DB. */
+  isRead?: boolean;
+  /** Per-game-type completion, populated server-side from the DB. */
+  gamesDone?: Partial<Record<GameType, boolean>>;
+  /** Per-game-type best score/points, populated server-side from the DB. */
+  gameScores?: Partial<Record<GameType, { score: number; points: number; maxScore: number }>>;
   games: MockGame[];
 }
 
@@ -607,9 +613,9 @@ export function getModuleBySlug(slug: string): MockModule | undefined {
 }
 
 export function getGameById(gameId: string): { game: MockGame; module: MockModule } | undefined {
-  for (const module of mockModules) {
-    const game = module.games.find((g) => g.id === gameId);
-    if (game) return { game, module };
+  for (const moduleDef of mockModules) {
+    const game = moduleDef.games.find((g) => g.id === gameId);
+    if (game) return { game, module: moduleDef };
   }
   return undefined;
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { reportGameCompletion } from "@/lib/games-client";
 import type { ConnectionsConfig } from "@/mock-data/modules";
 
 type Color = "yellow" | "green" | "blue" | "purple";
@@ -20,19 +22,21 @@ function shuffle<T>(arr: T[]): T[] {
 interface Props {
   config: ConnectionsConfig;
   pointsValue: number;
-  moduleSlug: string;
+  moduleId: string;
 }
 
-export function ConnectionsGame({ config, pointsValue, moduleSlug }: Props) {
+export function ConnectionsGame({ config, pointsValue, moduleId }: Props) {
   const flat = config.groups.flatMap((g) => g.items);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [solved, setSolved] = useState<ConnectionsConfig["groups"]>([]);
   const [remaining, setRemaining] = useState<string[]>(flat);
+  const [submissions, setSubmissions] = useState<string[][]>([]);
 
   // Shuffle only on the client after hydration to avoid server/client mismatch
   useEffect(() => {
-    setRemaining(shuffle(flat));
+    const timer = window.setTimeout(() => setRemaining(shuffle(flat)), 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [mistakes, setMistakes] = useState(0);
@@ -40,6 +44,18 @@ export function ConnectionsGame({ config, pointsValue, moduleSlug }: Props) {
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
   const maxMistakes = 4;
+
+  // Persist completion + points once the game ends (solving it earns points).
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    if ((!won && !lost) || reportedRef.current) return;
+    reportedRef.current = true;
+    reportGameCompletion({
+      moduleId,
+      type: "connections",
+      submissions,
+    });
+  }, [won, lost, submissions, moduleId]);
 
   function toggle(item: string) {
     if (won || lost) return;
@@ -54,6 +70,7 @@ export function ConnectionsGame({ config, pointsValue, moduleSlug }: Props) {
 
   function submit() {
     if (selected.length !== 4) return;
+    setSubmissions((prev) => [...prev, selected]);
     const match = config.groups.find(
       (g) => selected.every((s) => g.items.includes(s)) && g.items.every((s) => selected.includes(s))
     );
@@ -164,12 +181,12 @@ export function ConnectionsGame({ config, pointsValue, moduleSlug }: Props) {
                 ))}
             </div>
           )}
-          <a
-            href={`/modules/${moduleSlug}`}
+          <Link
+            href="/modules"
             className="inline-block mt-4 bg-[#0A3864] text-white rounded-xl px-5 py-2 text-sm font-medium hover:bg-[#1a5fa0] transition-colors"
           >
-            Back to Module
-          </a>
+            Back to Modules
+          </Link>
         </div>
       )}
     </div>

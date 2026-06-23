@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { X, ArrowRight, Clock, BarChart2, Zap, Lock, BookOpen, Trophy } from "lucide-react";
+import { X, ArrowRight, Clock, BarChart2, Zap, Lock, BookOpen, Trophy, CheckCircle2 } from "lucide-react";
 import type { MockModule, GameType, Difficulty } from "@/mock-data/modules";
 import { ModuleStatusBadge } from "./module-status-badge";
 import { ModuleIcon } from "./module-icon";
@@ -25,6 +24,12 @@ const ctaLabel: Record<string, string> = {
   completed: "Review Module",
 };
 
+function formatScore(score: { score: number; maxScore: number } | undefined): string | null {
+  if (!score || score.maxScore <= 0) return null;
+  const pct = Math.round((score.score / score.maxScore) * 100);
+  return `${score.score}/${score.maxScore} (${pct}%)`;
+}
+
 export function ModuleModalContent({
   module,
   onClose,
@@ -32,7 +37,7 @@ export function ModuleModalContent({
   module: MockModule;
   onClose: () => void;
 }) {
-  const gamesLocked = module.readPercent < 80;
+  const gamesLocked = !module.isRead;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -102,12 +107,18 @@ export function ModuleModalContent({
                 Activities
               </p>
               <div className="flex flex-col gap-2">
-                {module.games.map(game => (
+                {module.games.map(game => {
+                  const done = !!module.gamesDone?.[game.type];
+                  const scoreLabel = formatScore(module.gameScores?.[game.type]);
+                  const needsQuizScore = game.type === "quiz" && !done;
+                  return (
                   <div
                     key={game.id}
                     className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
                       gamesLocked
                         ? "border-primary-blue/8 bg-primary-blue/2 opacity-60"
+                        : done
+                        ? "border-emerald-200 bg-emerald-50/40"
                         : "border-primary-blue/10 bg-primary-blue/3 hover:bg-primary-blue/6"
                     }`}
                   >
@@ -129,27 +140,50 @@ export function ModuleModalContent({
                           <Zap className="w-3 h-3" />{game.pointsValue} pts
                         </span>
                       </div>
+                      {scoreLabel && (
+                        <p
+                          className={`mt-1.5 text-[11px] font-medium ${
+                            needsQuizScore ? "text-primary-red/70" : "text-primary-blue/45"
+                          }`}
+                        >
+                          Best score: {scoreLabel}
+                          {needsQuizScore ? " - score 80% to complete" : ""}
+                        </p>
+                      )}
                     </div>
                     {gamesLocked ? (
                       <div className="shrink-0 flex items-center gap-1 text-[11px] text-primary-blue/30">
                         <Lock className="w-3 h-3" />
-                        <span>Read 80%</span>
+                        <span>Locked</span>
                       </div>
                     ) : (
-                      <Link
-                        href={`/modules/${module.slug}/games/${game.id}`}
-                        onClick={onClose}
-                        className="shrink-0 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg px-3.5 py-1.5 transition-colors"
-                      >
-                        Play
-                      </Link>
+                      <div className="shrink-0 flex items-center gap-2">
+                        {done && (
+                          <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Done
+                          </span>
+                        )}
+                        <Link
+                          href={`/modules/${module.slug}/games/${game.id}`}
+                          onClick={onClose}
+                          className={`text-xs font-semibold rounded-lg px-3.5 py-1.5 transition-colors ${
+                            done
+                              ? "bg-primary-blue/8 text-primary-blue hover:bg-primary-blue/12"
+                              : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                          }`}
+                        >
+                          {done ? "Replay" : "Play"}
+                        </Link>
+                      </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
               {gamesLocked && (
                 <p className="text-[11px] text-primary-blue/30 mt-2 text-center">
-                  Read at least 80% of the module to unlock activities ({module.readPercent}% read so far)
+                  Read the module and tap &ldquo;Mark as read&rdquo; to unlock these activities.
                 </p>
               )}
             </div>

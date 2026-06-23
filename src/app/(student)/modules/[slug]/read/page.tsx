@@ -8,6 +8,9 @@ import { getModuleBySlug } from "@/mock-data/modules";
 import { ArrowLeft } from "lucide-react";
 import { ModuleReadClient } from "@/components/modules/module-read-client";
 import type { TocHeading } from "@/components/modules/module-toc";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { parseModulesStatus, getEntry } from "@/lib/module-progress";
 
 function slugify(text: string): string {
   return text
@@ -44,6 +47,17 @@ export default async function ModuleReadPage({ params }: { params: Promise<{ slu
   }
 
   const headings = content ? extractHeadings(content).filter((h) => h.level === 2) : [];
+  const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
+
+  // Read persisted progress so a returning reader isn't re-tracked.
+  const session = await auth();
+  const user = session?.user?.email
+    ? await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { modulesStatus: true },
+      })
+    : null;
+  const entry = getEntry(parseModulesStatus(user?.modulesStatus), module.id);
 
   if (!content) {
     return (
@@ -86,6 +100,15 @@ export default async function ModuleReadPage({ params }: { params: Promise<{ slu
       module={module}
       content={content}
       headings={headings}
+      moduleId={module.id}
+      alreadyRead={!!entry.isRead}
+      wordCount={wordCount}
+      initialProgress={{
+        readSeconds: entry.readSeconds ?? 0,
+        seenSections: entry.seenSections ?? [],
+        readPercent: entry.readPercent ?? 0,
+        reachedEnd: entry.reachedEnd ?? false,
+      }}
     />
   );
 }
