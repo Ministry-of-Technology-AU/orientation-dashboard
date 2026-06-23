@@ -71,7 +71,7 @@ const mdComponents: Components = {
     />
   ),
   code: ({ children }) => (
-    <code className="bg-primary-blue/6 text-primary-blue px-1.5 py-0.5 rounded font-mono text-[13px] break-words">
+    <code className="bg-primary-blue/6 text-primary-blue px-1.5 py-0.5 rounded font-mono text-[13px] wrap-break-word">
       {children}
     </code>
   ),
@@ -572,7 +572,7 @@ export function ModuleReadClient({
                               {isActive && (
                                 <motion.div
                                   layoutId="active-toc-line"
-                                  className="absolute left-[-16px] top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
+                                  className="absolute -left-4 top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
                                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 />
                               )}
@@ -606,7 +606,7 @@ export function ModuleReadClient({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
-              className="module-content px-4 xl:px-0 w-full max-w-3xl xl:max-w-none overflow-hidden break-words"
+              className="module-content px-4 xl:px-0 w-full max-w-3xl xl:max-w-none overflow-hidden wrap-break-word"
             >
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                 {content}
@@ -629,7 +629,7 @@ export function ModuleReadClient({
               animate={{ opacity: 0.38 }}
               exit={{ opacity: 0 }}
               onClick={toggleToc}
-              className="absolute inset-0 bg-[#0A3864]"
+              className="absolute inset-0 bg-primary-blue"
             />
 
             {/* Content Drawer */}
@@ -663,7 +663,7 @@ export function ModuleReadClient({
                           {isActive && (
                             <motion.div
                               layoutId="active-toc-line-mobile"
-                              className="absolute left-[-16px] top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
+                              className="absolute -left-4 top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
                               transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             />
                           )}
