@@ -1,7 +1,21 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { markChatUsed, parseDashboardProgress } from "@/lib/dashboard-progress";
 
 const GATEWAY = process.env.UNIAI_GATEWAY_URL!;
+
+type UserProgressDelegate = {
+  findUnique(args: {
+    where: { email: string };
+    select: { dashboardProgress: true };
+  }): Promise<{ dashboardProgress: unknown } | null>;
+  update(args: {
+    where: { email: string };
+    data: { dashboardProgress: Prisma.InputJsonValue };
+  }): Promise<unknown>;
+};
 
 function gwHeaders(email: string) {
   return {
@@ -88,6 +102,28 @@ export async function POST(req: Request) {
   }
 
   const body = result.body as { response: string };
+
+  try {
+    const userProgress = prisma.user as unknown as UserProgressDelegate;
+    const user = await userProgress.findUnique({
+      where: { email },
+      select: { dashboardProgress: true },
+    });
+    if (user) {
+      await userProgress.update({
+        where: { email },
+        data: {
+          dashboardProgress: markChatUsed(
+            parseDashboardProgress(user.dashboardProgress),
+            new Date().toISOString()
+          ) as unknown as Prisma.InputJsonValue,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("[/api/chat] Failed to mark chat usage:", error);
+  }
+
   return NextResponse.json({
     reply: body.response,
     conversationId: convId,

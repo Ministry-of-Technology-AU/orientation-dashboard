@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
 import { TourProvider } from "@/components/guided-tour";
+import { DashboardProgressTracker } from "@/components/dashboard/dashboard-progress-tracker";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -33,6 +34,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       initialTourComplete={dbUser.isTourComplete}
       initialOnboarded={dbUser.isOnboarded}
     >
+      <DashboardProgressTracker />
       <div className="flex flex-col md:flex-row h-screen overflow-hidden">
         {/* Desktop Collapsed Sidebar */}
         <div className="hidden md:block m-3 mr-0 shrink-0 relative z-10">
@@ -56,4 +58,3 @@ export default async function StudentLayout({ children }: { children: React.Reac
     </TourProvider>
   );
 }
-

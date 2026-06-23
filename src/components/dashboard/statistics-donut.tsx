@@ -1,27 +1,21 @@
 "use client";
 
 import { PieChart, Pie, Cell } from "recharts";
-
-interface ModuleStats {
-  total: number;
-  completedWithGames: number;
-  completedModules: number;
-  notStarted: number;
-}
+import type { ModuleStats } from "@/components/dashboard/dashboard-types";
 
 const COLORS = ["#0A3864", "#1a5fa0", "#d1dae3"];
 
 const legend = [
-  { label: "Modules + Test Completed", color: "#0A3864" },
-  { label: "Modules Completed", color: "#1a5fa0" },
+  { label: "Completed", color: "#0A3864" },
+  { label: "In Progress", color: "#1a5fa0" },
   { label: "Yet to Start", color: "#d1dae3" },
 ];
 
 export function StatisticsDonut({ stats }: { stats?: ModuleStats }) {
-  const safeStats = stats ?? { total: 0, completedWithGames: 0, completedModules: 0, notStarted: 0 };
+  const safeStats = stats ?? { total: 0, completedWithGames: 0, inProgress: 0, notStarted: 0 };
   const data = [
     { value: safeStats.completedWithGames ?? 0 },
-    { value: safeStats.completedModules ?? 0 },
+    { value: safeStats.inProgress ?? 0 },
     { value: safeStats.notStarted ?? 0 },
   ];
 
@@ -30,18 +24,18 @@ export function StatisticsDonut({ stats }: { stats?: ModuleStats }) {
 
 
   return (
-    <div className="bg-white rounded-2xl p-5 flex flex-col">
+    <div className="bg-white rounded-2xl p-5 min-h-[374px] flex flex-col">
       <h3 className="text-base font-semibold text-gray-800 mb-4">Statistics</h3>
 
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="relative">
-          <PieChart width={220} height={220}>
+          <PieChart width={250} height={250}>
             <Pie
               data={data}
-              cx={110}
-              cy={110}
-              innerRadius={72}
-              outerRadius={100}
+              cx={125}
+              cy={125}
+              innerRadius={80}
+              outerRadius={114}
               startAngle={90}
               endAngle={-270}
               dataKey="value"
@@ -60,7 +54,7 @@ export function StatisticsDonut({ stats }: { stats?: ModuleStats }) {
           </div>
         </div>
 
-        <div className="flex gap-4 mt-4 flex-wrap justify-center">
+        <div className="flex gap-4 mt-5 flex-wrap justify-center">
           {legend.map((item, i) => (
             <div key={i} className="flex items-center gap-1.5">
               <span

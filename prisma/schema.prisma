@@ -58,6 +58,8 @@ model User {
   modulesStatus Json? @map("modules_status")
   // { [moduleId]: { quiz: { score: number, answers: any[] }, wordle: { score: number }, connections: { score: number } } }
   moduleScores  Json? @map("module_scores")
+  // Lightweight dashboard journey/activity signals.
+  dashboardProgress Json? @map("dashboard_progress")
 
   // Buddy self-relation
   buddyId          String? @map("buddy_id")

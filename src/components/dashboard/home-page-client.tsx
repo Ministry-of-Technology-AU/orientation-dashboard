@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useId } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -104,10 +104,12 @@ export default function HomePageClient({
   isOnboarded,
   guides,
   userName,
+  initialCompletedGuideIds = [],
 }: {
   isOnboarded: boolean;
   guides: GuideMeta[];
   userName: string | null;
+  initialCompletedGuideIds?: string[];
 }) {
   const haptic = useWebHaptics();
   const confettiRef = useRef<ConfettiApi | null>(null);
@@ -116,7 +118,7 @@ export default function HomePageClient({
   const [contentCache, setContentCache] = useState<Map<string, string>>(new Map());
   const [contentLoading, setContentLoading] = useState(false);
   const [visible, setVisible] = useState(true);
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set(initialCompletedGuideIds));
   const prevId = useRef(selectedId);
   const prevCompletedCount = useRef(0);
 
@@ -185,13 +187,29 @@ export default function HomePageClient({
   }, [phase]);
 
   useEffect(() => {
-    setCompletedIds(loadCompleted());
+    const localCompleted = loadCompleted();
+    queueMicrotask(() => {
+      setCompletedIds(prev => {
+        const next = new Set([...prev, ...localCompleted]);
+        saveCompleted(next);
+        return next;
+      });
+    });
+    localCompleted.forEach((guideId) => {
+      if (!initialCompletedGuideIds.includes(guideId)) {
+        fetch("/api/dashboard/progress", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "completeGuide", guideId }),
+        }).catch(err => console.error("Failed to sync local guide completion:", err));
+      }
+    });
     if (!isOnboarded) {
       try {
         if (localStorage.getItem("orientation-hub-onboarded") === "true") setPhase("done");
       } catch { }
     }
-  }, [isOnboarded]);
+  }, [initialCompletedGuideIds, isOnboarded]);
 
   useEffect(() => {
     if (isOnboarded) {
@@ -265,9 +283,15 @@ export default function HomePageClient({
     setCompletedIds(prev => {
       const next = new Set(prev);
       const was = next.has(id);
-      was ? next.delete(id) : next.add(id);
+      if (was) next.delete(id);
+      else next.add(id);
       haptic.trigger(was ? "light" : "success");
       saveCompleted(next);
+      fetch("/api/dashboard/progress", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: was ? "uncompleteGuide" : "completeGuide", guideId: id }),
+      }).catch(err => console.error("Failed to persist guide completion:", err));
       return next;
     });
   }
