@@ -559,9 +559,14 @@ export function ModuleReadClient({
                 <div className="w-44">
                   {/* We map the custom click scrolling to make sure it scroll-margin flashes */}
                   <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-                    <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary-blue/30 mb-3 px-1">
-                      On this page
-                    </p>
+                    <div className="mb-4 px-1">
+                      <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-primary-blue/30 mb-0.5">
+                        On this page
+                      </p>
+                      <p className="text-[9px] text-primary-blue/40 leading-normal">
+                        Spend 2.5s+ on each section to check it off.
+                      </p>
+                    </div>
                     <nav className="relative">
                       <div className="absolute left-0 top-0 bottom-0 w-px bg-primary-blue/10" />
                       <ul className="space-y-px pl-4 relative">
@@ -583,13 +588,16 @@ export function ModuleReadClient({
                                   scrollToHeading(id);
                                 }}
                                 className={cn(
-                                  "block leading-snug transition-colors duration-150 text-[11px]",
+                                  "flex items-center justify-between gap-1.5 leading-snug transition-colors duration-150 text-[11px]",
                                   isActive
                                     ? "text-primary-blue font-semibold"
                                     : "text-primary-blue/40 hover:text-primary-blue/65"
                                 )}
                               >
-                                {text}
+                                <span className="truncate">{text}</span>
+                                {seenIds.has(id) && (
+                                  <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                                )}
                               </a>
                             </li>
                           );
@@ -640,16 +648,21 @@ export function ModuleReadClient({
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
               className="absolute right-0 top-0 bottom-0 w-72 max-w-[80vw] bg-white shadow-2xl p-6 flex flex-col z-10 border-l border-primary-blue/10"
             >
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-xs font-bold text-primary-blue/30 uppercase tracking-widest">
-                  Table of Contents
-                </span>
-                <button
-                  onClick={toggleToc}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-primary-blue/40 hover:text-primary-blue hover:bg-primary-blue/6 transition-colors active:scale-90"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-primary-blue/30 uppercase tracking-widest">
+                    Table of Contents
+                  </span>
+                  <button
+                    onClick={toggleToc}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-primary-blue/40 hover:text-primary-blue hover:bg-primary-blue/6 transition-colors active:scale-90"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-primary-blue/40 leading-normal">
+                  Spend at least 2.5s on each section to mark it as read.
+                </p>
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2">
@@ -674,13 +687,16 @@ export function ModuleReadClient({
                               scrollToHeading(id);
                             }}
                             className={cn(
-                              "block leading-snug transition-colors duration-150 text-[12px]",
+                              "flex items-center justify-between gap-2 leading-snug transition-colors duration-150 text-[12px]",
                               isActive
                                 ? "text-primary-blue font-bold"
                                 : "text-primary-blue/60 hover:text-primary-blue font-medium"
                             )}
                           >
-                            {text}
+                            <span className="truncate">{text}</span>
+                            {seenIds.has(id) && (
+                              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            )}
                           </a>
                         </li>
                       );
@@ -713,24 +729,27 @@ export function ModuleReadClient({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 15 }}
-              className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-md border border-primary-blue/10 rounded-2xl shadow-xl p-3 flex items-center gap-3"
+              className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-md border border-primary-blue/10 rounded-2xl shadow-xl p-3.5 flex items-center gap-3"
             >
-              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-primary-blue/40 mb-0.5">
+                  Reading Requirements:
+                </div>
                 <ReadRequirement
                   met={coverageOk}
                   label={
                     totalSections >= MIN_SECTIONS_FOR_COVERAGE
-                      ? `Read through the sections (${seenIds.size}/${totalSections})`
-                      : "Read through the module"
+                      ? `Section-wise time limit (${seenIds.size}/${totalSections} read for 2.5s+)`
+                      : "Dwell on the content"
                   }
                 />
                 <ReadRequirement
                   met={timeOk}
-                  label={`Spend enough time (${formatMMSS(
+                  label={`Overall time limit (${formatMMSS(
                     Math.min(activeSeconds, requiredSeconds)
                   )} / ${formatMMSS(requiredSeconds)})`}
                 />
-                <ReadRequirement met={reachedEnd} label="Reach the end" />
+                <ReadRequirement met={reachedEnd} label="Scroll to bottom" />
               </div>
               <button
                 onClick={handleMarkRead}
