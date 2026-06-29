@@ -54,6 +54,21 @@ export default function ExplorePage() {
   // Haptic threshold tracker ref
   const thresholdTriggered = useRef<'left' | 'right' | null>(null);
   const heartIdCounter = useRef(0);
+  const exploreMarkedRef = useRef(false);
+
+  function markExploreUsed() {
+    if (exploreMarkedRef.current) return;
+    exploreMarkedRef.current = true;
+    fetch("/api/dashboard/progress", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "markExploreUsed" }),
+      keepalive: true,
+    }).catch((error) => {
+      exploreMarkedRef.current = false;
+      console.error("Failed to mark explore usage:", error);
+    });
+  }
 
   useEffect(() => {
     setTimeout(() => {
@@ -143,6 +158,7 @@ export default function ExplorePage() {
 
   function handleLike(id: string) {
     haptic.trigger("success");
+    markExploreUsed();
     setDirection('right');
     heartIdCounter.current += 1;
     setFlyingHeart(heartIdCounter.current);
@@ -153,6 +169,7 @@ export default function ExplorePage() {
 
   const handleDismiss = (id: string) => {
     haptic.trigger("light");
+    markExploreUsed();
     setDirection('left');
     setTimeout(() => {
       setSwipes((s) => ({ ...s, [id]: "dismissed" }));

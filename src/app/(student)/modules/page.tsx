@@ -1,126 +1,68 @@
-"use client";
-
-import { useState } from "react";
 import { mockModules } from "@/mock-data/modules";
-import type { MockModule, ModuleStatus } from "@/mock-data/modules";
-import { ModuleCard } from "@/components/modules/module-card";
-import { ModuleModalContent } from "@/components/modules/module-modal";
-import { Dialog, DialogContent } from "@/components/motion-primitives/dialog";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { useWebHaptics } from "web-haptics/react";
+import { ModulesPageClient } from "@/components/modules/modules-page-client";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { parseModulesStatus, getEntry, deriveStatus } from "@/lib/module-progress";
+import type { GameType } from "@/mock-data/modules";
 
-const TABS: { label: string; value: ModuleStatus | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Complete", value: "completed" },
-  { label: "In Progress", value: "in_progress" },
-  { label: "Yet To Start", value: "not_started" },
-];
+type ScoreEntry = { score?: number; points?: number; maxScore?: number };
+type ModuleScores = Record<string, Partial<Record<GameType, ScoreEntry>>>;
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-    },
-  },
-};
+function parseModuleScores(raw: unknown): ModuleScores {
+  if (!raw || typeof raw !== "object") return {};
+  return raw as ModuleScores;
+}
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 15 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 260,
-      damping: 22,
-    },
-  },
-} as const;
+function quizScoreMeetsCompletion(scores: ModuleScores, moduleId: string): boolean {
+  const quiz = scores[moduleId]?.quiz;
+  const score = typeof quiz?.score === "number" ? quiz.score : 0;
+  const maxScore = typeof quiz?.maxScore === "number" ? quiz.maxScore : 0;
+  return maxScore > 0 && score / maxScore >= 0.8;
+}
 
-export default function ModulesPage() {
-  const [filter, setFilter] = useState<ModuleStatus | "all">("all");
-  const [selected, setSelected] = useState<MockModule | null>(null);
-  const haptic = useWebHaptics();
+function normalizeScore(entry: ScoreEntry | undefined) {
+  if (!entry) return undefined;
+  const score = typeof entry.score === "number" ? entry.score : 0;
+  const points = typeof entry.points === "number" ? entry.points : 0;
+  const maxScore = typeof entry.maxScore === "number" ? entry.maxScore : 0;
+  return { score, points, maxScore };
+}
 
-  const filtered = filter === "all" ? mockModules : mockModules.filter((m) => m.status === filter);
+export default async function ModulesPage() {
+  const session = await auth();
+  const user = session?.user?.email
+    ? await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { modulesStatus: true, moduleScores: true },
+      })
+    : null;
+  const status = parseModulesStatus(user?.modulesStatus);
+  const scores = parseModuleScores(user?.moduleScores);
 
-  const handleFilterChange = (val: ModuleStatus | "all") => {
-    haptic.trigger("selection");
-    setFilter(val);
-  };
+  // Merge persisted read/progress state into each module so the cards and
+  // modal reflect real unlock state from the DB.
+  const modules = mockModules.map((m) => {
+    const entry = getEntry(status, m.id);
+    const gamesDone = {
+      quiz: quizScoreMeetsCompletion(scores, m.id),
+      wordle: !!entry.isWordleDone,
+      connections: !!entry.isConnectionsDone,
+    };
+    const derivedEntry = { ...entry, isQuizDone: gamesDone.quiz };
 
-  const handleCardClick = (module: MockModule) => {
-    haptic.trigger("medium");
-    setSelected(module);
-  };
+    return {
+      ...m,
+      isRead: !!entry.isRead,
+      readPercent: entry.isRead ? 100 : entry.readPercent ?? 0,
+      status: deriveStatus(m, derivedEntry),
+      gamesDone,
+      gameScores: {
+        quiz: normalizeScore(scores[m.id]?.quiz),
+        wordle: normalizeScore(scores[m.id]?.wordle),
+        connections: normalizeScore(scores[m.id]?.connections),
+      },
+    };
+  });
 
-  return (
-    <>
-      <main className="flex-1 overflow-y-auto px-7 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Modules</h1>
-          <p className="text-sm text-gray-500 mb-6">Complete all mandatory modules to unlock your journey milestones.</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="flex items-center gap-2 mb-5 flex-wrap"
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => handleFilterChange(tab.value)}
-              className={cn(
-                "rounded-full border px-3.5 py-1 text-xs font-medium transition-all duration-200 active:scale-95 cursor-pointer",
-                filter === tab.value
-                  ? "bg-primary-blue text-white border-primary-blue shadow-sm"
-                  : "border-gray-300 text-gray-600 hover:border-primary-blue/40 hover:text-primary-blue"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </motion.div>
-
-        <motion.div
-          key={filter} // trigger re-animation on tab change
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="flex flex-col gap-3"
-        >
-          {filtered.map((module) => (
-            <motion.div key={module.id} variants={itemVariants}>
-              <ModuleCard module={module} onClick={handleCardClick} />
-            </motion.div>
-          ))}
-          {filtered.length === 0 && (
-            <motion.p
-              variants={itemVariants}
-              className="text-sm text-gray-400 text-center py-10"
-            >
-              No modules in this category.
-            </motion.p>
-          )}
-        </motion.div>
-      </main>
-
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent className="bg-white rounded-2xl w-full max-w-[520px] max-h-[88vh] flex flex-col overflow-hidden border border-primary-blue/8 p-0">
-          {selected && (
-            <ModuleModalContent module={selected} onClose={() => setSelected(null)} />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+  return <ModulesPageClient modules={modules} />;
 }

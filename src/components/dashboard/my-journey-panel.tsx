@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { Milestone } from "@/mock-data/dashboard";
 import { useWebHaptics } from "web-haptics/react";
+import type { JourneyMilestone, JourneyNextUp } from "@/components/dashboard/dashboard-types";
 
 interface MyJourneyPanelProps {
-  milestones?: Milestone[];
-  nextUp?: { title: string; subtitle: string; href: string };
+  milestones?: JourneyMilestone[];
+  nextUp?: JourneyNextUp;
 }
 
-function MilestoneDot({ status }: { status: Milestone["status"] }) {
+function MilestoneDot({ status }: { status: JourneyMilestone["status"] }) {
   if (status === "done") {
     return (
       <div className="w-4 h-4 rounded-full bg-[#0A3864] border-2 border-[#0A3864] shrink-0" />
@@ -26,7 +26,7 @@ function MilestoneDot({ status }: { status: Milestone["status"] }) {
   );
 }
 
-function StatusBadge({ status }: { status: Milestone["status"] }) {
+function StatusBadge({ status }: { status: JourneyMilestone["status"] }) {
   if (status === "done") {
     return (
       <span className="ml-2 text-[10px] font-semibold bg-[#0A3864] text-white rounded-full px-2 py-0.5">
@@ -62,12 +62,12 @@ export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
             <div className="flex flex-col items-center">
               <MilestoneDot status={milestone.status} />
               {i < safeMilestones.length - 1 && (
-                <div className="w-0.5 flex-1 min-h-[28px] bg-gray-300 my-1" />
+              <div className="w-0.5 flex-1 min-h-[22px] bg-gray-300 my-1" />
               )}
             </div>
 
             {/* Label */}
-            <div className={cn("pb-5", i === safeMilestones.length - 1 && "pb-0")}>
+            <div className={cn("pb-4", i === safeMilestones.length - 1 && "pb-0")}>
               <div className="flex items-center flex-wrap gap-y-0.5">
                 <span
                   className={cn(
@@ -102,7 +102,7 @@ export function MyJourneyPanel({ milestones, nextUp }: MyJourneyPanelProps) {
                 onClick={() => haptic.trigger("selection")}
                 className="block w-full text-center text-xs bg-[#0d4a7a] hover:bg-[#1a5fa0] text-white rounded-lg py-2 transition-all duration-200 active:scale-95 cursor-pointer font-semibold shadow-sm"
               >
-                Resume Module →
+                {safeNextUp.ctaLabel ?? "Continue →"}
               </Link>
             )}
           </div>

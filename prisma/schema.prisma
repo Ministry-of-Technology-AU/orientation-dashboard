@@ -14,6 +14,18 @@ enum Role {
   admin
 }
 
+enum GameType {
+  quiz
+  wordle
+  connections
+}
+
+enum Difficulty {
+  easy
+  moderate
+  hard
+}
+
 // ─── Core Models ─────────────────────────────────────────────────────────────
 
 model User {
@@ -46,6 +58,8 @@ model User {
   modulesStatus Json? @map("modules_status")
   // { [moduleId]: { quiz: { score: number, answers: any[] }, wordle: { score: number }, connections: { score: number } } }
   moduleScores  Json? @map("module_scores")
+  // Lightweight dashboard journey/activity signals.
+  dashboardProgress Json? @map("dashboard_progress")
 
   // Buddy self-relation
   buddyId          String? @map("buddy_id")
@@ -62,15 +76,16 @@ model User {
 
 model Module {
   id          String  @id @default(uuid())
+  // URL-friendly identifier used in routes (/modules/[slug]) and to locate markdown
+  slug        String  @unique
   title       String
   icon        String?
   description String  @db.Text
   isMandatory Boolean @default(false) @map("is_mandatory")
-
-  // Game availability flags
-  hasWordle      Boolean @default(false) @map("has_wordle")
-  hasQuiz        Boolean @default(false) @map("has_quiz")
-  hasConnections Boolean @default(false) @map("has_connections")
+  // Display order in the modules list
+  orderIndex  Int     @default(0) @map("order_index")
+  // Optional journey/milestone grouping label (e.g. "Academics", "Residence Life")
+  journeyMilestone String? @map("journey_milestone")
 
   // Rich text content (MD) or a path to the MD file
   content String @db.LongText
@@ -78,18 +93,36 @@ model Module {
   // Analytics counter — incremented each time a student completes the module
   completionCount Int @default(0) @map("completion_count")
 
-  // Game content stored as JSON
-  // quiz:        { questions: [{ q, options, answer }] }
-  quiz        Json?
-  // connections: { groups: [{ label, color, items: string[] }] } — 5 groups
-  connections Json?
-  // wordle:      correct word string
-  wordle      String?
-
-  // Utility relations
+  // Relations
+  games        Game[]
   timeSessions TimeSession[]
 
   @@map("modules")
+}
+
+model Game {
+  id            String     @id @default(uuid())
+  moduleId      String     @map("module_id")
+  type          GameType
+  title         String
+  difficulty    Difficulty @default(easy)
+  pointsValue   Int        @default(0) @map("points_value")
+  estimatedMins Int        @default(0) @map("estimated_mins")
+  // Order of the game within its module's activity list
+  orderIndex    Int        @default(0) @map("order_index")
+
+  // Type-specific payload:
+  //   quiz:        { questions: [{ q, options, answer }] }
+  //   connections: { groups: [{ label, color, items: string[] }] }
+  //   wordle:      { word, maxAttempts, hint }
+  config Json
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  // A module has at most one game of each type (matches the per-type progress flags on User)
+  @@unique([moduleId, type])
+  @@index([moduleId])
+  @@map("games")
 }
 
 model Org {

@@ -9,8 +9,8 @@ export default async function LoginPage() {
   return (
     <div className="flex h-screen">
       {/* Left: login form — frosted card */}
-      <div className="flex flex-col items-center justify-center w-[30%] px-6 bg-white/70 backdrop-blur-md">
-        <div className="w-[80%]">
+      <div className="flex flex-col items-center justify-center w-full md:w-[30%] px-8 md:px-6 bg-white/70 backdrop-blur-md">
+        <div className="w-full max-w-sm md:w-[80%]">
           {/* Wordmark */}
           <p className="text-xs font-semibold tracking-widest text-primary-blue uppercase mb-12">
             Ashoka University
@@ -43,7 +43,7 @@ export default async function LoginPage() {
       </div>
 
       {/* Right: background image shows through */}
-      <div className="w-[70%]" />
+      <div className="hidden md:block md:w-[70%]" />
     </div>
   );
 }

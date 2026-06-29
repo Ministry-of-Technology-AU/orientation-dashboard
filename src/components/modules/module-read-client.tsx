@@ -4,10 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Menu, X, ArrowUp } from "lucide-react";
+import { ArrowLeft, Menu, X, ArrowUp, Check, Lock, CheckCircle2, Loader2 } from "lucide-react";
 import { useWebHaptics } from "web-haptics/react";
 import { motion, AnimatePresence, useScroll } from "framer-motion";
-import { ModuleToc, type TocHeading } from "./module-toc";
+import { toast } from "sonner";
+import type { TocHeading } from "./module-toc";
 import type { MockModule } from "@/mock-data/modules";
 import type { Components } from "react-markdown";
 import { cn } from "@/lib/utils";
@@ -70,7 +71,7 @@ const mdComponents: Components = {
     />
   ),
   code: ({ children }) => (
-    <code className="bg-primary-blue/6 text-primary-blue px-1.5 py-0.5 rounded font-mono text-[13px] break-words">
+    <code className="bg-primary-blue/6 text-primary-blue px-1.5 py-0.5 rounded font-mono text-[13px] wrap-break-word">
       {children}
     </code>
   ),
@@ -81,27 +82,360 @@ const mdComponents: Components = {
   ),
 };
 
+// Reading-completion thresholds.
+const FAST_READ_MODE =
+  process.env.NODE_ENV !== "production" &&
+  process.env.NEXT_PUBLIC_MODULE_READ_FAST_MODE === "true";
+const SECTION_DWELL_MS = FAST_READ_MODE ? 250 : 2500; // a heading counts as "seen" after this much continuous viewport time
+const COVERAGE_TARGET = FAST_READ_MODE ? 0 : 0.85; // fraction of sections that must be seen (when there are enough sections)
+const MIN_SECTIONS_FOR_COVERAGE = 3; // below this, fall back to time + reached-end only
+const END_THRESHOLD = FAST_READ_MODE ? 0.1 : 0.9; // scroll progress that counts as "reached the end"
+const WORDS_PER_MINUTE = 200;
+const MIN_READ_SECONDS = FAST_READ_MODE ? 3 : 20;
+const MAX_READ_SECONDS = FAST_READ_MODE ? 5 : 600; // cap the required reading time at 10 minutes
+const IDLE_MS = 60_000; // pause the active-time clock after this long without interaction
+const LOCAL_SAVE_MS = 3_000; // how often to snapshot resume state to localStorage (crash-resilient)
+const DB_SYNC_MS = 30_000; // how often to push resume state to the DB (cross-device)
+
+function formatMMSS(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function ReadRequirement({ met, label }: { met: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[11px]">
+      <span
+        className={cn(
+          "flex items-center justify-center w-4 h-4 rounded-full shrink-0 transition-colors",
+          met ? "bg-emerald-500 text-white" : "bg-primary-blue/10 text-transparent"
+        )}
+      >
+        <Check className="w-2.5 h-2.5" />
+      </span>
+      <span className={cn("truncate", met ? "text-primary-blue/70 font-medium" : "text-primary-blue/40")}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export interface ReadingProgress {
+  readSeconds: number;
+  seenSections: string[];
+  readPercent: number;
+  reachedEnd: boolean;
+}
+
 export function ModuleReadClient({
   module,
   content,
   headings,
+  moduleId,
+  alreadyRead = false,
+  wordCount = 0,
+  initialProgress,
 }: {
   module: MockModule;
   content: string;
   headings: TocHeading[];
+  moduleId: string;
+  alreadyRead?: boolean;
+  wordCount?: number;
+  initialProgress?: ReadingProgress;
 }) {
   const haptic = useWebHaptics();
   const mainRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ container: mainRef });
   const [isTocOpen, setIsTocOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [activeId, setActiveId] = useState<string>("");
+  const [activeId, setActiveId] = useState<string>(() => headings[0]?.id ?? "");
 
+  // ── Reading-completion tracking — hydrated from the DB (cross-device) ──────
+  const [isRead, setIsRead] = useState(alreadyRead);
+  const [saving, setSaving] = useState(false);
+  const [seenIds, setSeenIds] = useState<Set<string>>(
+    () => new Set(initialProgress?.seenSections ?? [])
+  );
+  const [activeSeconds, setActiveSeconds] = useState(initialProgress?.readSeconds ?? 0);
+  const [reachedEnd, setReachedEnd] = useState(initialProgress?.reachedEnd ?? false);
+
+  const requiredSeconds = Math.min(
+    MAX_READ_SECONDS,
+    Math.max(MIN_READ_SECONDS, Math.round((wordCount / WORDS_PER_MINUTE) * 60))
+  );
+  const totalSections = headings.length;
+  const coverageRatio = totalSections > 0 ? seenIds.size / totalSections : 1;
+  const coverageOk =
+    totalSections < MIN_SECTIONS_FOR_COVERAGE ? true : coverageRatio >= COVERAGE_TARGET;
+  const timeOk = activeSeconds >= requiredSeconds;
+  const allConditionsMet = coverageOk && timeOk && reachedEnd;
+  const canMarkRead = allConditionsMet && !isRead && !saving;
+
+  // Live refs so the sync interval reads current values without re-subscribing.
+  const activeSecondsRef = useRef(activeSeconds);
+  const seenIdsRef = useRef<Set<string>>(seenIds);
+  const reachedEndRef = useRef(reachedEnd);
+  const scrollPctRef = useRef(initialProgress?.readPercent ?? 0);
+  const maxProgressRef = useRef(initialProgress?.readPercent ?? 0);
+  const lastSyncSigRef = useRef("");
+
+  // Keep refs in sync so the sync interval always reads current values.
   useEffect(() => {
-    if (headings.length > 0) {
-      setActiveId(headings[0].id);
+    activeSecondsRef.current = activeSeconds;
+    seenIdsRef.current = seenIds;
+    reachedEndRef.current = reachedEnd;
+  }, [activeSeconds, seenIds, reachedEnd]);
+
+  const storageKey = `module-read:${moduleId}`;
+
+  const recomputeMaxProgress = () => {
+    const coveragePct = totalSections > 0 ? (seenIdsRef.current.size / totalSections) * 100 : 0;
+    const candidate = Math.max(scrollPctRef.current, coveragePct);
+    if (candidate > maxProgressRef.current) maxProgressRef.current = Math.round(candidate);
+  };
+
+  // Snapshot resume state to localStorage (cheap, every few seconds) for instant
+  // reload + crash resilience. The DB remains authoritative for cross-device.
+  const saveLocal = () => {
+    recomputeMaxProgress();
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          readSeconds: activeSecondsRef.current,
+          seenSections: [...seenIdsRef.current],
+          reachedEnd: reachedEndRef.current,
+          maxProgress: maxProgressRef.current,
+          scrollTop: mainRef.current?.scrollTop ?? 0,
+        })
+      );
+    } catch {
+      // storage unavailable / quota — non-fatal
     }
-  }, [headings]);
+  };
+
+  // Push the full resume state to the DB. Skips the write when nothing changed
+  // (e.g. the reader is idle), unless `force` is set (start / tab-hide).
+  const syncDbProgress = (opts?: { keepalive?: boolean; force?: boolean }) => {
+    recomputeMaxProgress();
+    const payload = {
+      started: true,
+      readPercent: maxProgressRef.current,
+      readSeconds: activeSecondsRef.current,
+      seenSections: [...seenIdsRef.current],
+      reachedEnd: reachedEndRef.current,
+    };
+    const sig = `${payload.readPercent}|${payload.readSeconds}|${payload.seenSections.length}|${payload.reachedEnd}`;
+    if (!opts?.force && sig === lastSyncSigRef.current) return;
+    lastSyncSigRef.current = sig;
+    fetch(`/api/modules/${moduleId}/read`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: opts?.keepalive,
+    }).catch(() => {});
+  };
+
+  // Track which heading sections have been dwelled on long enough to count as read.
+  useEffect(() => {
+    if (isRead) return;
+    const scroller = mainRef.current;
+    if (!scroller || headings.length === 0) return;
+
+    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          if (entry.isIntersecting) {
+            if (!timers.has(id)) {
+              timers.set(
+                id,
+                setTimeout(() => {
+                  setSeenIds((prev) => {
+                    if (prev.has(id)) return prev;
+                    const next = new Set(prev);
+                    next.add(id);
+                    return next;
+                  });
+                }, SECTION_DWELL_MS)
+              );
+            }
+          } else {
+            const t = timers.get(id);
+            if (t) {
+              clearTimeout(t);
+              timers.delete(id);
+            }
+          }
+        });
+      },
+      { root: scroller, threshold: 0.4 }
+    );
+
+    headings.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      observer.disconnect();
+      timers.forEach((t) => clearTimeout(t));
+    };
+  }, [headings, isRead]);
+
+  // Accumulate *active* reading time — paused when the tab is hidden or the reader is idle.
+  useEffect(() => {
+    if (isRead) return;
+    let lastActivity = Date.now();
+    const bump = () => {
+      lastActivity = Date.now();
+    };
+    const scroller = mainRef.current;
+    scroller?.addEventListener("scroll", bump, { passive: true });
+    window.addEventListener("pointermove", bump, { passive: true });
+    window.addEventListener("keydown", bump);
+
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastActivity > IDLE_MS) return;
+      setActiveSeconds((s) => s + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      scroller?.removeEventListener("scroll", bump);
+      window.removeEventListener("pointermove", bump);
+      window.removeEventListener("keydown", bump);
+    };
+  }, [isRead]);
+
+  // Reached-the-end signal + scroll-based progress (short pages count immediately).
+  useEffect(() => {
+    if (isRead) return;
+    const scroller = mainRef.current;
+    if (scroller && scroller.scrollHeight - scroller.clientHeight < 50) {
+      setReachedEnd(true);
+      scrollPctRef.current = 100;
+      recomputeMaxProgress();
+      return;
+    }
+    const unsubscribe = scrollYProgress.on("change", (v) => {
+      scrollPctRef.current = v * 100;
+      recomputeMaxProgress();
+      if (v >= END_THRESHOLD) setReachedEnd(true);
+    });
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollYProgress, isRead]);
+
+  // On open: merge localStorage (crash-resilient, 3s) with the DB state already
+  // in props. Every field is monotonic, so we take max / union / OR — correct for
+  // both crash recovery AND cross-device (a fresher DB from another device wins on
+  // the fields where it's ahead; a fresher local cache wins where it's ahead).
+  // Syncing React state from an external store on mount is the intended use here.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (isRead) return;
+    let localScrollTop = 0;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (typeof s.readSeconds === "number" && s.readSeconds > activeSecondsRef.current) {
+          setActiveSeconds(s.readSeconds);
+        }
+        if (Array.isArray(s.seenSections)) {
+          setSeenIds((prev) => {
+            const merged = new Set(prev);
+            let changed = false;
+            for (const id of s.seenSections) {
+              if (typeof id === "string" && !merged.has(id)) {
+                merged.add(id);
+                changed = true;
+              }
+            }
+            return changed ? merged : prev;
+          });
+        }
+        if (s.reachedEnd) setReachedEnd(true);
+        if (typeof s.maxProgress === "number" && s.maxProgress > maxProgressRef.current) {
+          maxProgressRef.current = s.maxProgress;
+        }
+        if (typeof s.scrollTop === "number") localScrollTop = s.scrollTop;
+      }
+    } catch {
+      // ignore malformed storage
+    }
+    // Restore scroll: exact px if cached on this device, else approximate by %.
+    const pct = maxProgressRef.current;
+    requestAnimationFrame(() => {
+      const scroller = mainRef.current;
+      if (!scroller) return;
+      if (localScrollTop > 0) scroller.scrollTop = localScrollTop;
+      else if (pct > 0) scroller.scrollTop = (pct / 100) * (scroller.scrollHeight - scroller.clientHeight);
+    });
+    // Announce "started" so the badge flips to in_progress immediately.
+    syncDbProgress({ force: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Persist locally every few seconds; push to the DB every 30s; reliable final
+  // write on tab-hide / navigation via fetch keepalive (no blocking popup).
+  useEffect(() => {
+    if (isRead) return;
+    const localTimer = setInterval(saveLocal, LOCAL_SAVE_MS);
+    const dbTimer = setInterval(() => syncDbProgress(), DB_SYNC_MS);
+
+    const flush = () => {
+      if (document.visibilityState === "hidden") {
+        saveLocal();
+        syncDbProgress({ keepalive: true, force: true });
+      }
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+
+    return () => {
+      clearInterval(localTimer);
+      clearInterval(dbTimer);
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+      // Final flush on unmount (e.g. client-side navigation away).
+      saveLocal();
+      syncDbProgress({ keepalive: true, force: true });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRead]);
+
+  const handleMarkRead = async () => {
+    if (!canMarkRead) return;
+    setSaving(true);
+    haptic.trigger("medium");
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ readPercent: 100 }),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      setIsRead(true);
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+        // ignore
+      }
+      toast.success("Module marked as read — activities unlocked!");
+    } catch (err) {
+      console.error("Failed to mark module as read:", err);
+      toast.error("Couldn't save your progress. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     const scroller = mainRef.current;
@@ -238,7 +572,7 @@ export function ModuleReadClient({
                               {isActive && (
                                 <motion.div
                                   layoutId="active-toc-line"
-                                  className="absolute left-[-16px] top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
+                                  className="absolute -left-4 top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
                                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 />
                               )}
@@ -272,7 +606,7 @@ export function ModuleReadClient({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
-              className="module-content px-4 xl:px-0 w-full max-w-3xl xl:max-w-none overflow-hidden break-words"
+              className="module-content px-4 xl:px-0 w-full max-w-3xl xl:max-w-none overflow-hidden wrap-break-word"
             >
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                 {content}
@@ -295,7 +629,7 @@ export function ModuleReadClient({
               animate={{ opacity: 0.38 }}
               exit={{ opacity: 0 }}
               onClick={toggleToc}
-              className="absolute inset-0 bg-[#0A3864]"
+              className="absolute inset-0 bg-primary-blue"
             />
 
             {/* Content Drawer */}
@@ -329,7 +663,7 @@ export function ModuleReadClient({
                           {isActive && (
                             <motion.div
                               layoutId="active-toc-line-mobile"
-                              className="absolute left-[-16px] top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
+                              className="absolute -left-4 top-0 bottom-0 w-0.5 bg-primary-blue rounded-full"
                               transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             />
                           )}
@@ -358,6 +692,69 @@ export function ModuleReadClient({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Reading completion tracker */}
+      <div className="fixed inset-x-0 bottom-20 md:bottom-6 z-30 flex justify-center px-4 pointer-events-none">
+        <AnimatePresence mode="wait">
+          {isRead ? (
+            <motion.div
+              key="read"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              className="pointer-events-auto flex items-center gap-2 bg-emerald-500 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              You&apos;ve read this module
+            </motion.div>
+          ) : (
+            <motion.div
+              key="progress"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 15 }}
+              className="pointer-events-auto w-full max-w-md bg-white/95 backdrop-blur-md border border-primary-blue/10 rounded-2xl shadow-xl p-3 flex items-center gap-3"
+            >
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <ReadRequirement
+                  met={coverageOk}
+                  label={
+                    totalSections >= MIN_SECTIONS_FOR_COVERAGE
+                      ? `Read through the sections (${seenIds.size}/${totalSections})`
+                      : "Read through the module"
+                  }
+                />
+                <ReadRequirement
+                  met={timeOk}
+                  label={`Spend enough time (${formatMMSS(
+                    Math.min(activeSeconds, requiredSeconds)
+                  )} / ${formatMMSS(requiredSeconds)})`}
+                />
+                <ReadRequirement met={reachedEnd} label="Reach the end" />
+              </div>
+              <button
+                onClick={handleMarkRead}
+                disabled={!canMarkRead}
+                className={cn(
+                  "shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-xl px-4 py-2.5 transition-all",
+                  canMarkRead
+                    ? "bg-primary-blue text-white hover:bg-primary-blue/90 active:scale-95 cursor-pointer"
+                    : "bg-primary-blue/10 text-primary-blue/40 cursor-not-allowed"
+                )}
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : canMarkRead ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5" />
+                )}
+                Mark as read
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Floating Back-to-Top Button */}
       <AnimatePresence>
