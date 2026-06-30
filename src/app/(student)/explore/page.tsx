@@ -118,6 +118,33 @@ export default function ExplorePage() {
     thresholdTriggered.current = null;
   }, [currentClub?.id, x]);
 
+  // Preload and save next clubs' assets (photos and logos) in the browser's Cache Storage
+  useEffect(() => {
+    if (recommended.length === 0) return;
+    
+    // Cache the current club plus the next 5 clubs in the queue
+    const nextClubs = recommended.slice(0, 6);
+    const urls = nextClubs.flatMap((club) => [
+      `/clubs/${club.id}.webp`,
+      `/clubs/logos/${club.id}.webp`,
+    ]);
+
+    if (typeof window !== "undefined" && "caches" in window) {
+      caches.open("club-assets-v1").then((cache) => {
+        urls.forEach((url) => {
+          cache.match(url).then((matched) => {
+            if (!matched) {
+              // Fetch and cache the asset persistently
+              cache.add(url).catch(() => {
+                // Ignore errors for missing files (e.g., 404)
+              });
+            }
+          });
+        });
+      });
+    }
+  }, [recommended]);
+
   const handleDrag = (
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
@@ -319,13 +346,15 @@ export default function ExplorePage() {
                       <Heart className="w-5 h-5 fill-current" />
                       Go to your Likes
                     </Link>
-                    <Link
-                      href="/catalogue"
+                    <a
+                      href="https://sg.ashoka.edu.in/platform/organisations-catalogue"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={() => haptic.trigger("medium")}
                       className="w-full flex items-center justify-center gap-2 bg-white text-primary-blue font-bold py-4 rounded-2xl border-2 border-primary-blue/15 hover:border-primary-blue/25 hover:bg-blue-tint transition-all active:scale-95"
                     >
                       View Full Catalogue
-                    </Link>
+                    </a>
                   </div>
                 </motion.div>
               )}
@@ -351,13 +380,15 @@ export default function ExplorePage() {
 
         {/* Bottom Navigation */}
         <footer className="shrink-0 flex items-center justify-center py-6 px-6 z-10">
-          <Link
-            href="/catalogue"
+          <a
+            href="https://sg.ashoka.edu.in/platform/organisations-catalogue"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => haptic.trigger("light")}
             className="text-sm font-semibold text-primary-blue/45 hover:text-primary-blue transition-colors underline decoration-primary-blue/20 underline-offset-4"
           >
             View full catalogue
-          </Link>
+          </a>
         </footer>
       </div>
 

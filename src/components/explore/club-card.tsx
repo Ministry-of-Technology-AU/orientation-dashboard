@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Club, ClubType } from "@/mock-data/clubs";
 import { Heart } from "lucide-react";
@@ -19,6 +20,9 @@ export function ClubCard({
   swipeStatus?: "liked" | "dismissed";
   onClick: () => void;
 }) {
+  const [bgError, setBgError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+
   return (
     <button
       onClick={onClick}
@@ -30,18 +34,39 @@ export function ClubCard({
         swipeStatus === "dismissed" && "opacity-60 grayscale-[0.5]"
       )}
     >
-      {/* Cover image placeholder */}
-      <div 
-        className="w-full aspect-4/3 rounded-t-2xl relative overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, hsl(${(club.name.charCodeAt(0) * 13) % 360}, 80%, 45%), hsl(${(club.name.charCodeAt(club.name.length - 1) * 27) % 360}, 80%, 30%))`
-        }}
-      >
+      {/* Cover image */}
+      <div className="w-full aspect-4/3 rounded-t-2xl relative overflow-hidden bg-neutral-900">
+        {!bgError ? (
+          <img
+            src={`/clubs/${club.id}.webp`}
+            alt={club.name}
+            onError={() => setBgError(true)}
+            className="absolute inset-0 object-cover w-full h-full"
+            draggable={false}
+          />
+        ) : (
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, hsl(${(club.name.charCodeAt(0) * 13) % 360}, 80%, 45%), hsl(${(club.name.charCodeAt(club.name.length - 1) * 27) % 360}, 80%, 30%))`
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-black/10" />
         {swipeStatus === 'liked' && (
            <div className="absolute top-3 right-3 bg-primary-red text-white p-1.5 rounded-full shadow-md z-10 animate-in zoom-in duration-200">
               <Heart className="w-3 h-3 fill-current" />
            </div>
+        )}
+        {!logoError && (
+          <div className="absolute bottom-2 left-2 w-8 h-8 rounded-full overflow-hidden border border-white shadow bg-white z-10 select-none pointer-events-none">
+            <img
+              src={`/clubs/logos/${club.id}.webp`}
+              alt={`${club.name} logo`}
+              onError={() => setLogoError(true)}
+              className="w-full h-full object-cover"
+            />
+          </div>
         )}
       </div>
 

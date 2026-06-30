@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Library } from "lucide-react";
+import { ArrowLeft, Library, ExternalLink } from "lucide-react";
 
 export default function CataloguePage() {
+  useEffect(() => {
+    window.location.replace("https://sg.ashoka.edu.in/platform/organisations-catalogue");
+  }, []);
+
   return (
     <div className="flex flex-col h-full w-full bg-neutral-50 font-sans">
       {/* Header */}
@@ -23,13 +28,20 @@ export default function CataloguePage() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 max-w-sm mx-auto">
-        <div className="w-24 h-24 bg-white border border-neutral-200 rounded-3xl flex items-center justify-center mb-6 shadow-sm rotate-3">
-          <Library className="w-10 h-10 text-neutral-400" />
+        <div className="w-24 h-24 bg-white border border-neutral-200 rounded-3xl flex items-center justify-center mb-6 shadow-sm rotate-3 animate-pulse">
+          <Library className="w-10 h-10 text-primary-blue/60" />
         </div>
-        <h2 className="text-2xl font-bold text-neutral-900 mb-3">Catalogue Coming Soon</h2>
-        <p className="text-neutral-500 leading-relaxed">
-          The full directory of organizations is currently being assembled. Check back later to see every club available.
+        <h2 className="text-2xl font-bold text-neutral-900 mb-3">Redirecting to Catalogue</h2>
+        <p className="text-neutral-500 leading-relaxed mb-6">
+          You are being redirected to the Ashoka Organisations Catalogue portal.
         </p>
+        <a
+          href="https://sg.ashoka.edu.in/platform/organisations-catalogue"
+          className="flex items-center justify-center gap-2 px-5 py-3 bg-primary-blue text-white rounded-xl text-sm font-bold shadow-md hover:bg-primary-blue/90 transition-all w-full"
+        >
+          <span>Click here if not redirected</span>
+          <ExternalLink className="w-4 h-4" />
+        </a>
       </main>
     </div>
   );

@@ -86,7 +86,7 @@ const mdComponents: Components = {
 const FAST_READ_MODE =
   process.env.NODE_ENV !== "production" &&
   process.env.NEXT_PUBLIC_MODULE_READ_FAST_MODE === "true";
-const SECTION_DWELL_MS = FAST_READ_MODE ? 250 : 2500; // a heading counts as "seen" after this much continuous viewport time
+const SECTION_DWELL_MS = 2500; // a heading counts as "seen" after this much continuous viewport time
 const COVERAGE_TARGET = FAST_READ_MODE ? 0 : 0.85; // fraction of sections that must be seen (when there are enough sections)
 const MIN_SECTIONS_FOR_COVERAGE = 3; // below this, fall back to time + reached-end only
 const END_THRESHOLD = FAST_READ_MODE ? 0.1 : 0.9; // scroll progress that counts as "reached the end"
