@@ -437,11 +437,14 @@ export function ModuleReadClient({
       } catch {
         // ignore
       }
+      const targetUrl = module.games && module.games.length > 0
+        ? `/modules/${module.slug}/games/${module.games[0].id}`
+        : "/modules";
       toast.success("Module marked as read — activities unlocked!", {
         action: {
           label: "Take me to games",
           onClick: () => {
-            window.location.href = `/modules/${module.slug}`;
+            window.location.href = targetUrl;
           },
         },
       });
@@ -726,7 +729,7 @@ export function ModuleReadClient({
       </AnimatePresence>
 
       {/* Reading completion tracker */}
-      <div className="fixed inset-x-0 bottom-20 md:bottom-6 z-30 flex justify-center px-4 pointer-events-none">
+    <div className="fixed inset-x-0 bottom-20 md:bottom-6 z-30 flex justify-center px-4 pointer-events-none">
         <AnimatePresence mode="wait">
           {isRead ? (
             <motion.div
@@ -742,7 +745,7 @@ export function ModuleReadClient({
               </div>
               <div className="w-px h-4 bg-white/30" />
               <Link
-                href={`/modules/${module.slug}`}
+                href={module.games && module.games.length > 0 ? `/modules/${module.slug}/games/${module.games[0].id}` : "/modules"}
                 className="text-white hover:text-white/80 transition-colors flex items-center gap-1 cursor-pointer"
               >
                 Go to games
