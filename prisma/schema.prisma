@@ -60,6 +60,8 @@ model User {
   moduleScores  Json? @map("module_scores")
   // Lightweight dashboard journey/activity signals.
   dashboardProgress Json? @map("dashboard_progress")
+  
+  hasConfirmedInternationalGuidelines Boolean @default(false) @map("has_confirmed_intl_guidelines")
 
   // Buddy self-relation
   buddyId          String? @map("buddy_id")

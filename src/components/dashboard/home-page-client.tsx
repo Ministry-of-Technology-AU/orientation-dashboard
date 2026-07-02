@@ -17,6 +17,7 @@ import remarkGfm from "remark-gfm";
 import type { GuideMeta } from "@/lib/notion";
 import { Confetti } from "@/components/ui/confetti";
 import type { ConfettiApi } from "@/components/ui/confetti";
+import { toast } from "sonner";
 
 // ── localStorage helpers ─────────────────────────────────────────────────────
 function loadCompleted(): Set<string> {
@@ -71,17 +72,27 @@ function ProgressRing({ pct, size = 72 }: { pct: number; size?: number }) {
 }
 
 // ── Interactive checkbox ──────────────────────────────────────────────────────
-function InteractiveCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
+function InteractiveCheckbox({
+  defaultChecked,
+  disabled = false,
+  onChange,
+}: {
+  defaultChecked: boolean;
+  disabled?: boolean;
+  onChange?: (checked: boolean) => void;
+}) {
   const [checked, setChecked] = useState(defaultChecked);
   const haptic = useWebHaptics();
   useEffect(() => { setChecked(defaultChecked); }, [defaultChecked]);
   const toggle = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
+    if (disabled) return;
     const next = !checked; setChecked(next);
+    onChange?.(next);
     haptic.trigger(next ? "success" : "light");
   };
   return (
-    <button type="button" role="checkbox" aria-checked={checked} onClick={toggle}
+    <button type="button" role="checkbox" aria-checked={checked} onClick={toggle} disabled={disabled}
       className={cn(
         "peer h-5 w-5 shrink-0 rounded border-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center transition-all duration-200 align-middle -mt-0.5 mr-2.5 cursor-pointer select-none",
         checked ? "bg-primary-blue border-primary-blue text-[#FAF6F0]" : "border-primary-blue/20 bg-transparent hover:border-primary-blue/40 hover:bg-primary-blue/5"
@@ -105,11 +116,13 @@ export default function HomePageClient({
   guides,
   userName,
   initialCompletedGuideIds = [],
+  hasConfirmedInternationalGuidelines,
 }: {
   isOnboarded: boolean;
   guides: GuideMeta[];
   userName: string | null;
   initialCompletedGuideIds?: string[];
+  hasConfirmedInternationalGuidelines?: boolean;
 }) {
   const haptic = useWebHaptics();
   const confettiRef = useRef<ConfettiApi | null>(null);
@@ -119,6 +132,8 @@ export default function HomePageClient({
   const [contentLoading, setContentLoading] = useState(false);
   const [visible, setVisible] = useState(true);
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set(initialCompletedGuideIds));
+  const [intlConfirmed, setIntlConfirmed] = useState(hasConfirmedInternationalGuidelines ?? false);
+  const [isConfirmingIntl, setIsConfirmingIntl] = useState(false);
   const prevId = useRef(selectedId);
   const prevCompletedCount = useRef(0);
 
@@ -262,6 +277,11 @@ export default function HomePageClient({
     prevCompletedCount.current = count;
   }, [completedIds, guides.length]);
 
+  const handleIntlConfirm = (checked: boolean) => {
+    setIntlConfirmed(checked);
+    haptic.trigger("medium");
+  };
+
   function dismissSplash() {
     if (!canContinue) return;
     haptic.trigger("medium");
@@ -301,7 +321,28 @@ export default function HomePageClient({
     if (idx < guides.length - 1) { const nid = guides[idx + 1].id; select(nid); fetchContent(nid); }
   }
 
-  function handleNextGuide() { toggleComplete(selectedId); goNext(); }
+  async function handleNextGuide() { 
+    toggleComplete(selectedId); 
+    
+    // Sync the international confirmation if we are on the international guide
+    const guide = guides.find(g => g.id === selectedId);
+    if (guide?.title?.toLowerCase().includes("international")) {
+      try {
+        await fetch("/api/user", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hasConfirmedInternationalGuidelines: intlConfirmed }),
+        });
+        if (intlConfirmed) {
+          toast.success("Guidelines confirmed!");
+        }
+      } catch (err) {
+        console.error("Failed to sync international guidelines confirmation:", err);
+      }
+    }
+
+    goNext(); 
+  }
 
   function scrollToReader() {
     guideReaderRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -733,6 +774,24 @@ export default function HomePageClient({
                     </div>
                   ) : (
                     <p className="text-[14px] text-primary-blue/30 italic">No content available for this guide.</p>
+                  )}
+
+                  {guide?.title?.toLowerCase().includes("international") && (
+                    <div className="mt-8 pt-6 border-t border-primary-blue/10 flex items-start gap-3">
+                      <div className="pt-0.5">
+                        <InteractiveCheckbox
+                          defaultChecked={intlConfirmed}
+                          disabled={isConfirmingIntl}
+                          onChange={(checked) => handleIntlConfirm(checked)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[15px] font-medium text-primary-blue leading-snug cursor-pointer select-none" onClick={() => !isConfirmingIntl && handleIntlConfirm(!intlConfirmed)}>
+                          I confirm that I have read and understood the above-mentioned guidelines.
+                        </label>
+                        <p className="text-[13px] text-primary-blue/60 mt-1">This confirmation is required for all international students.</p>
+                      </div>
+                    </div>
                   )}
                 </div>
 

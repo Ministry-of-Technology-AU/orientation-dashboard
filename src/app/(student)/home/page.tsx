@@ -9,8 +9,8 @@ import type { GuideMeta } from "@/lib/notion";
 type HomeUserDelegate = {
   findUnique(args: {
     where: { id: string };
-    select: { isOnboarded: true; dashboardProgress: true };
-  }): Promise<{ isOnboarded: boolean; dashboardProgress: unknown } | null>;
+    select: { isOnboarded: true; dashboardProgress: true; hasConfirmedInternationalGuidelines: true };
+  }): Promise<{ isOnboarded: boolean; dashboardProgress: unknown; hasConfirmedInternationalGuidelines: boolean } | null>;
 };
 
 // Revalidate this page every 60 seconds (ISR) so new/removed guides
@@ -25,14 +25,16 @@ export default async function HomePage() {
 
   // Fetch user onboarding status
   let isOnboarded = false;
+  let hasConfirmedInternationalGuidelines = false;
   let completedGuideIds: string[] = [];
   try {
     const userDelegate = prisma.user as unknown as HomeUserDelegate;
     const user = await userDelegate.findUnique({
       where: { id: session.user.id },
-      select: { isOnboarded: true, dashboardProgress: true },
+      select: { isOnboarded: true, dashboardProgress: true, hasConfirmedInternationalGuidelines: true },
     });
     isOnboarded = user?.isOnboarded ?? false;
+    hasConfirmedInternationalGuidelines = user?.hasConfirmedInternationalGuidelines ?? false;
     completedGuideIds = parseDashboardProgress(user?.dashboardProgress).completedGuideIds;
   } catch (error) {
     console.error("Error fetching user in HomePage:", error);
@@ -53,6 +55,7 @@ export default async function HomePage() {
       guides={guides}
       userName={session.user.name ?? null}
       initialCompletedGuideIds={completedGuideIds}
+      hasConfirmedInternationalGuidelines={hasConfirmedInternationalGuidelines}
     />
   );
 }

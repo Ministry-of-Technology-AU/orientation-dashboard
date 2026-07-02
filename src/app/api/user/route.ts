@@ -31,13 +31,19 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const body = await req.json();
-    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber, interests } = body;
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return NextResponse.json({ error: "Invalid or missing JSON body" }, { status: 400 });
+    }
+    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber, interests, hasConfirmedInternationalGuidelines } = body;
 
     const updateData: any = {};
     if (typeof isOnboarded === "boolean") updateData.isOnboarded = isOnboarded;
     if (typeof isTourComplete === "boolean") updateData.isTourComplete = isTourComplete;
     if (typeof isInternational === "boolean") updateData.isInternational = isInternational;
+    if (typeof hasConfirmedInternationalGuidelines === "boolean") updateData.hasConfirmedInternationalGuidelines = hasConfirmedInternationalGuidelines;
     if (typeof petName === "string") updateData.petName = petName;
     if (typeof city === "string") updateData.city = city;
     if (typeof phoneNumber === "string") updateData.phoneNumber = phoneNumber;
