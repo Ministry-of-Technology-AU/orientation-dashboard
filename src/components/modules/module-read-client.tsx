@@ -4,10 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Menu, X, ArrowUp, Check, Lock, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Menu, X, ArrowUp, Check, Lock, CheckCircle2, Loader2, BookOpen, Clock } from "lucide-react";
 import { useWebHaptics } from "web-haptics/react";
 import { motion, AnimatePresence, useScroll } from "framer-motion";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/components/motion-primitives/dialog";
 import type { TocHeading } from "./module-toc";
 import type { MockModule } from "@/mock-data/modules";
 import type { Components } from "react-markdown";
@@ -160,6 +161,7 @@ export function ModuleReadClient({
   );
   const [activeSeconds, setActiveSeconds] = useState(initialProgress?.readSeconds ?? 0);
   const [reachedEnd, setReachedEnd] = useState(initialProgress?.reachedEnd ?? false);
+  const [showRequirementsModal, setShowRequirementsModal] = useState(false);
 
   const requiredSeconds = Math.min(
     MAX_READ_SECONDS,
@@ -379,6 +381,13 @@ export function ModuleReadClient({
     });
     // Announce "started" so the badge flips to in_progress immediately.
     syncDbProgress({ force: true });
+
+    // Show requirements popup on first entry for this session
+    const hasSeenSessionKey = `has-seen-reading-requirements:${moduleId}`;
+    if (!sessionStorage.getItem(hasSeenSessionKey)) {
+      setShowRequirementsModal(true);
+      sessionStorage.setItem(hasSeenSessionKey, "true");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -752,18 +761,18 @@ export function ModuleReadClient({
                 <ReadRequirement met={reachedEnd} label="Scroll to bottom" />
               </div>
               <button
-                onClick={handleMarkRead}
-                disabled={!canMarkRead}
+                onClick={allConditionsMet ? handleMarkRead : () => setShowRequirementsModal(true)}
+                disabled={saving}
                 className={cn(
-                  "shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-xl px-4 py-2.5 transition-all",
-                  canMarkRead
-                    ? "bg-primary-blue text-white hover:bg-primary-blue/90 active:scale-95 cursor-pointer"
-                    : "bg-primary-blue/10 text-primary-blue/40 cursor-not-allowed"
+                  "shrink-0 flex items-center gap-1.5 text-xs font-semibold rounded-xl px-4 py-2.5 transition-all cursor-pointer active:scale-95",
+                  allConditionsMet
+                    ? "bg-primary-blue text-white hover:bg-primary-blue/90"
+                    : "bg-primary-blue/10 text-primary-blue/60 hover:bg-primary-blue/15"
                 )}
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : canMarkRead ? (
+                ) : allConditionsMet ? (
                   <Check className="w-3.5 h-3.5" />
                 ) : (
                   <Lock className="w-3.5 h-3.5" />
@@ -790,6 +799,121 @@ export function ModuleReadClient({
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Reading Requirements Onboarding & Help Popup */}
+      <Dialog open={showRequirementsModal} onOpenChange={setShowRequirementsModal}>
+        <DialogContent className="bg-white rounded-2xl w-full max-w-[440px] p-6 flex flex-col gap-5 border border-primary-blue/10 shadow-2xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5 text-primary-blue">
+              <div className="w-8 h-8 rounded-lg bg-primary-blue/6 flex items-center justify-center shrink-0">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <div>
+                <DialogTitle className="text-sm font-bold text-primary-blue">
+                  Reading Requirements
+                </DialogTitle>
+                <p className="text-[11px] text-primary-blue/40 mt-0.5">
+                  Complete these steps to unlock games & activities.
+                </p>
+              </div>
+            </div>
+            <DialogClose className="w-7 h-7 rounded-lg flex items-center justify-center text-primary-blue/30 hover:text-primary-blue hover:bg-primary-blue/6 transition-colors relative top-0 right-0">
+              <X className="w-4 h-4" />
+            </DialogClose>
+          </div>
+
+          <div className="flex flex-col gap-3 py-1">
+            {/* Requirement 1: Section Dwell */}
+            <div className={cn(
+              "flex items-start gap-3 p-3 rounded-xl border transition-colors",
+              coverageOk 
+                ? "border-emerald-100 bg-emerald-50/20" 
+                : "border-primary-blue/6 bg-primary-blue/2"
+            )}>
+              <div className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                coverageOk ? "bg-emerald-500 text-white" : "bg-primary-blue/10 text-primary-blue/40"
+              )}>
+                {coverageOk ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-primary-blue">Spend 2.5s+ on each section</p>
+                <p className="text-[11px] text-primary-blue/50 mt-0.5">
+                  {totalSections >= MIN_SECTIONS_FOR_COVERAGE
+                    ? `Dwell on each heading. Read ${seenIds.size} of ${totalSections} sections.`
+                    : "Spend time reading each part of the module."}
+                </p>
+                {totalSections >= MIN_SECTIONS_FOR_COVERAGE && (
+                  <div className="w-full bg-primary-blue/8 h-1 rounded-full mt-2 overflow-hidden">
+                    <div 
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${(seenIds.size / totalSections) * 100}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Requirement 2: Overall Time */}
+            <div className={cn(
+              "flex items-start gap-3 p-3 rounded-xl border transition-colors",
+              timeOk 
+                ? "border-emerald-100 bg-emerald-50/20" 
+                : "border-primary-blue/6 bg-primary-blue/2"
+            )}>
+              <div className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                timeOk ? "bg-emerald-500 text-white" : "bg-primary-blue/10 text-primary-blue/40"
+              )}>
+                {timeOk ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-primary-blue">Minimum overall reading time</p>
+                <p className="text-[11px] text-primary-blue/50 mt-0.5">
+                  Spend at least {formatMMSS(requiredSeconds)} on this module.
+                </p>
+                <p className="text-[10px] font-bold text-primary-blue/40 mt-1">
+                  Progress: {formatMMSS(Math.min(activeSeconds, requiredSeconds))} / {formatMMSS(requiredSeconds)}
+                </p>
+                <div className="w-full bg-primary-blue/8 h-1 rounded-full mt-2 overflow-hidden">
+                  <div 
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (activeSeconds / requiredSeconds) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Requirement 3: Scroll to End */}
+            <div className={cn(
+              "flex items-start gap-3 p-3 rounded-xl border transition-colors",
+              reachedEnd 
+                ? "border-emerald-100 bg-emerald-50/20" 
+                : "border-primary-blue/6 bg-primary-blue/2"
+            )}>
+              <div className={cn(
+                "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                reachedEnd ? "bg-emerald-500 text-white" : "bg-primary-blue/10 text-primary-blue/40"
+              )}>
+                {reachedEnd ? <Check className="w-3 h-3" /> : <ArrowUp className="w-3 h-3 rotate-180" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-primary-blue">Scroll to the bottom</p>
+                <p className="text-[11px] text-primary-blue/50 mt-0.5">
+                  Make sure to read through to the very end of the content.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowRequirementsModal(false)}
+            className="w-full bg-primary-blue hover:bg-primary-blue/90 text-white text-xs font-semibold py-2.5 rounded-xl transition-colors cursor-pointer active:scale-95"
+          >
+            Got it, let&apos;s read!
+          </button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
