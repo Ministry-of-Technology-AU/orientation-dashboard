@@ -19,6 +19,7 @@ interface Conversation {
 interface Props {
   userImage: string | null;
   userName: string | null;
+  dbFaqs?: { id: string; category: string; title: string; content: string }[];
 }
 
 function groupConversations(convs: Conversation[]) {
@@ -44,7 +45,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export function ChatPageClient({ userImage, userName }: Props) {
+export function ChatPageClient({ userImage, userName, dbFaqs }: Props) {
   const [tab, setTab] = useState<Tab>("chat");
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
@@ -226,7 +227,7 @@ export function ChatPageClient({ userImage, userName }: Props) {
         )
       ) : (
         <div className="flex-1 overflow-y-auto py-4">
-          <FaqSection />
+          <FaqSection dbFaqs={dbFaqs} />
         </div>
       )}
     </main>

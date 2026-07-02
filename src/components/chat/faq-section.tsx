@@ -29,11 +29,26 @@ function AccordionItem({ question, answer }: { question: string; answer: string 
   );
 }
 
-export function FaqSection() {
+export function FaqSection({
+  dbFaqs,
+}: {
+  dbFaqs?: { id: string; category: string; title: string; content: string }[];
+}) {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<FaqCategory | "All">("All");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
-  const filtered = mockFaqItems.filter((item) => {
+  const itemsSource = dbFaqs && dbFaqs.length > 0
+    ? dbFaqs.map((f) => ({
+        id: f.id,
+        category: f.category,
+        question: f.title,
+        answer: f.content,
+      }))
+    : mockFaqItems;
+
+  const categories = Array.from(new Set(itemsSource.map((item) => item.category))).sort();
+
+  const filtered = itemsSource.filter((item) => {
     const matchesCategory = activeCategory === "All" || item.category === activeCategory;
     const matchesQuery =
       !query ||
@@ -42,14 +57,14 @@ export function FaqSection() {
     return matchesCategory && matchesQuery;
   });
 
-  const grouped = (["All", ...FAQ_CATEGORIES] as const).reduce(
+  const grouped = ["All", ...categories].reduce(
     (acc, cat) => {
       if (cat === "All") return acc;
       const items = filtered.filter((i) => i.category === cat);
       if (items.length) acc[cat] = items;
       return acc;
     },
-    {} as Record<FaqCategory, typeof filtered>
+    {} as Record<string, typeof filtered>
   );
 
   return (
@@ -68,7 +83,7 @@ export function FaqSection() {
 
       {/* Category filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        {(["All", ...FAQ_CATEGORIES] as const).map((cat) => (
+        {["All", ...categories].map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}

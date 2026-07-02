@@ -437,7 +437,14 @@ export function ModuleReadClient({
       } catch {
         // ignore
       }
-      toast.success("Module marked as read — activities unlocked!");
+      toast.success("Module marked as read — activities unlocked!", {
+        action: {
+          label: "Take me to games",
+          onClick: () => {
+            window.location.href = `/modules/${module.slug}`;
+          },
+        },
+      });
     } catch (err) {
       console.error("Failed to mark module as read:", err);
       toast.error("Couldn't save your progress. Please try again.");
@@ -727,10 +734,19 @@ export function ModuleReadClient({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 15 }}
-              className="pointer-events-auto flex items-center gap-2 bg-emerald-500 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg"
+              className="pointer-events-auto flex items-center gap-3 bg-emerald-500 text-white text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              You&apos;ve read this module
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>You&apos;ve read this module</span>
+              </div>
+              <div className="w-px h-4 bg-white/30" />
+              <Link
+                href={`/modules/${module.slug}`}
+                className="text-white hover:text-white/80 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                Go to games
+              </Link>
             </motion.div>
           ) : (
             <motion.div
