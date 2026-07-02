@@ -510,7 +510,7 @@ export default function HomePageClient({
             </AnimatePresence>
 
             <div className="px-5 sm:px-7 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-primary-red/10 bg-white/40">
-              {[["Online Orientation", "11 Aug 2025"], ["O-Week begins", "18 Aug 2025"], ["Move-in", "Before 18 Aug 2025"]].map(([label, value]) => (
+              {[["Online Orientation", "11 Aug 2026"], ["O-Week begins", "18 Aug 2026"], ["Move-in", "Before 18 Aug 2026"]].map(([label, value]) => (
                 <span key={label} className="text-[11px] text-primary-blue/30 whitespace-nowrap">
                   {label}: <span className="text-primary-blue/55 font-medium">{value}</span>
                 </span>
@@ -614,10 +614,10 @@ export default function HomePageClient({
                       style={
                         guide.coverImage
                           ? {
-                              backgroundImage: `linear-gradient(to right, rgba(230, 237, 245, 0.75) 30%, rgba(255, 255, 255, 0.45) 100%), url(${guide.coverImage})`,
-                              backgroundSize: "cover",
-                              backgroundPosition: "center",
-                            }
+                            backgroundImage: `linear-gradient(to right, rgba(230, 237, 245, 0.75) 30%, rgba(255, 255, 255, 0.45) 100%), url(${guide.coverImage})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
                           : undefined
                       }
                     >

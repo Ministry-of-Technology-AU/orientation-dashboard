@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { fetchGoogleCalendarEvents } from "@/lib/google-calendar";
 import { getGuidesMeta } from "@/lib/notion";
 import { formatTime } from "@/mock-data/calendar";
-import { mockModules, type GameType, type MockModule } from "@/mock-data/modules";
+import { type GameType, type MockModule, type Difficulty, type MockGame, type ModuleStatus } from "@/mock-data/modules";
 import { getEntry, parseModulesStatus, type ModuleStatusEntry } from "@/lib/module-progress";
 import { parseDashboardProgress, type DashboardProgress } from "@/lib/dashboard-progress";
 import { DashboardPageClient } from "@/components/dashboard/dashboard-page-client";
@@ -78,8 +78,11 @@ function moduleHasProgress(entry: ModuleStatusEntry): boolean {
   return !!entry.started || !!entry.isRead || (entry.readPercent ?? 0) > 0 || (entry.readSeconds ?? 0) > 0;
 }
 
-function buildTimeSpendingData(status: Record<string, ModuleStatusEntry>): TimeSpendingPoint[] {
-  return mockModules
+function buildTimeSpendingData(
+  status: Record<string, ModuleStatusEntry>,
+  modules: MockModule[]
+): TimeSpendingPoint[] {
+  return modules
     .map((module) => {
       const readSeconds = Math.max(0, Math.floor(getEntry(status, module.id).readSeconds ?? 0));
       return {
@@ -275,7 +278,42 @@ export default async function DashboardPage() {
   const modulesStatus = parseModulesStatus(user.modulesStatus);
   const moduleScores = parseModuleScores(user.moduleScores);
   const progress = parseDashboardProgress(user.dashboardProgress);
-  const mandatoryModules = mockModules.filter((module) => module.isMandatory);
+
+  // Fetch all modules and games from the DB
+  const dbModules = await prisma.module.findMany({
+    include: {
+      games: true,
+    },
+    orderBy: {
+      orderIndex: "asc",
+    },
+  });
+
+  const modules: MockModule[] = dbModules.map((m) => ({
+    id: m.id,
+    slug: m.slug,
+    title: m.title,
+    description: m.description,
+    iconName: m.icon || "book-open",
+    isMandatory: m.isMandatory,
+    orderIndex: m.orderIndex,
+    journeyMilestone: m.journeyMilestone,
+    status: "not_started" as ModuleStatus,
+    readPercent: 0,
+    games: m.games
+      .map((g) => ({
+        id: g.id,
+        title: g.title,
+        type: g.type as GameType,
+        difficulty: g.difficulty as Difficulty,
+        pointsValue: g.pointsValue,
+        estimatedMins: g.estimatedMins,
+        config: g.config as unknown as MockGame["config"],
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  }));
+
+  const mandatoryModules = modules.filter((module) => module.isMandatory);
 
   const moduleStates = mandatoryModules.map((module) => {
     const entry = getEntry(modulesStatus, module.id);
@@ -318,7 +356,7 @@ export default async function DashboardPage() {
       name: user.name?.split(" ")[0] ?? "Ashokan Student",
       totalPoints: totalPoints(moduleScores),
     },
-    timeSpendingData: buildTimeSpendingData(modulesStatus),
+    timeSpendingData: buildTimeSpendingData(modulesStatus, modules),
     moduleStats,
     moduleCompletion: {
       percentage: mandatoryModules.length > 0

@@ -2,15 +2,13 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { promises as fs } from "fs";
-import path from "path";
-import { getModuleBySlug } from "@/mock-data/modules";
 import { ArrowLeft } from "lucide-react";
 import { ModuleReadClient } from "@/components/modules/module-read-client";
 import type { TocHeading } from "@/components/modules/module-toc";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseModulesStatus, getEntry } from "@/lib/module-progress";
+import type { GameType, Difficulty, MockGame, ModuleStatus } from "@/mock-data/modules";
 
 function slugify(text: string): string {
   return text
@@ -35,17 +33,17 @@ function extractHeadings(markdown: string): TocHeading[] {
 
 export default async function ModuleReadPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const module = getModuleBySlug(slug);
-  if (!module) notFound();
+  
+  // Fetch module and games from DB
+  const dbModule = await prisma.module.findUnique({
+    where: { slug },
+    include: {
+      games: true,
+    },
+  });
+  if (!dbModule) notFound();
 
-  const mdPath = path.join(process.cwd(), "public", "modules", `${slug}.md`);
-  let content: string | null = null;
-  try {
-    content = await fs.readFile(mdPath, "utf-8");
-  } catch {
-    // no markdown file for this module yet
-  }
-
+  const content = dbModule.content || null;
   const headings = content ? extractHeadings(content).filter((h) => h.level === 2) : [];
   const wordCount = content ? content.trim().split(/\s+/).filter(Boolean).length : 0;
 
@@ -57,7 +55,31 @@ export default async function ModuleReadPage({ params }: { params: Promise<{ slu
         select: { modulesStatus: true },
       })
     : null;
-  const entry = getEntry(parseModulesStatus(user?.modulesStatus), module.id);
+  const entry = getEntry(parseModulesStatus(user?.modulesStatus), dbModule.id);
+
+  const formattedModule = {
+    id: dbModule.id,
+    slug: dbModule.slug,
+    title: dbModule.title,
+    description: dbModule.description,
+    iconName: dbModule.icon || "book-open",
+    isMandatory: dbModule.isMandatory,
+    orderIndex: dbModule.orderIndex,
+    journeyMilestone: dbModule.journeyMilestone,
+    status: "not_started" as ModuleStatus,
+    readPercent: entry.isRead ? 100 : entry.readPercent ?? 0,
+    games: dbModule.games
+      .map((g) => ({
+        id: g.id,
+        title: g.title,
+        type: g.type as GameType,
+        difficulty: g.difficulty as Difficulty,
+        pointsValue: g.pointsValue,
+        estimatedMins: g.estimatedMins,
+        config: g.config as unknown as MockGame["config"],
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  };
 
   if (!content) {
     return (
@@ -72,7 +94,7 @@ export default async function ModuleReadPage({ params }: { params: Promise<{ slu
             Back to modules
           </Link>
           <div className="h-4 w-px bg-primary-blue/15" />
-          <p className="text-sm font-semibold text-primary-blue truncate">{module.title}</p>
+          <p className="text-sm font-semibold text-primary-blue truncate">{formattedModule.title}</p>
         </div>
 
         <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -97,10 +119,10 @@ export default async function ModuleReadPage({ params }: { params: Promise<{ slu
 
   return (
     <ModuleReadClient
-      module={module}
+      module={formattedModule}
       content={content}
       headings={headings}
-      moduleId={module.id}
+      moduleId={formattedModule.id}
       alreadyRead={!!entry.isRead}
       wordCount={wordCount}
       initialProgress={{

@@ -1,9 +1,8 @@
-import { mockModules } from "@/mock-data/modules";
 import { ModulesPageClient } from "@/components/modules/modules-page-client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseModulesStatus, getEntry, deriveStatus } from "@/lib/module-progress";
-import type { GameType } from "@/mock-data/modules";
+import type { GameType, Difficulty, MockGame, MockModule, ModuleStatus } from "@/mock-data/modules";
 
 type ScoreEntry = { score?: number; points?: number; maxScore?: number };
 type ModuleScores = Record<string, Partial<Record<GameType, ScoreEntry>>>;
@@ -39,9 +38,19 @@ export default async function ModulesPage() {
   const status = parseModulesStatus(user?.modulesStatus);
   const scores = parseModuleScores(user?.moduleScores);
 
+  // Fetch all modules and their games from the database
+  const dbModules = await prisma.module.findMany({
+    include: {
+      games: true,
+    },
+    orderBy: {
+      orderIndex: "asc",
+    },
+  });
+
   // Merge persisted read/progress state into each module so the cards and
   // modal reflect real unlock state from the DB.
-  const modules = mockModules.map((m) => {
+  const modules = dbModules.map((m) => {
     const entry = getEntry(status, m.id);
     const gamesDone = {
       quiz: quizScoreMeetsCompletion(scores, m.id),
@@ -50,11 +59,38 @@ export default async function ModulesPage() {
     };
     const derivedEntry = { ...entry, isQuizDone: gamesDone.quiz };
 
+    // Format module games
+    const games = m.games
+      .map((g) => ({
+        id: g.id,
+        title: g.title,
+        type: g.type as GameType,
+        difficulty: g.difficulty as Difficulty,
+        pointsValue: g.pointsValue,
+        estimatedMins: g.estimatedMins,
+        config: g.config as unknown as MockGame["config"],
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)); // keep stable order
+
+    const moduleData = {
+      id: m.id,
+      slug: m.slug,
+      title: m.title,
+      description: m.description,
+      iconName: m.icon || "book-open",
+      isMandatory: m.isMandatory,
+      orderIndex: m.orderIndex,
+      journeyMilestone: m.journeyMilestone,
+      status: "not_started" as ModuleStatus, // derived below
+      readPercent: entry.isRead ? 100 : entry.readPercent ?? 0,
+      games,
+    };
+
     return {
-      ...m,
+      ...moduleData,
       isRead: !!entry.isRead,
       readPercent: entry.isRead ? 100 : entry.readPercent ?? 0,
-      status: deriveStatus(m, derivedEntry),
+      status: deriveStatus(moduleData as MockModule, derivedEntry),
       gamesDone,
       gameScores: {
         quiz: normalizeScore(scores[m.id]?.quiz),
