@@ -610,6 +610,76 @@ export const mockClubs: Club[] = [
       "Social"
     ],
     "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c45",
+    "name": "Techmin",
+    "type": "ministry",
+    "description": "Building and sustaining campus digital infrastructure, and providing resources and tools to students. The ministry of technology of AUSG",
+    "contactEmail": "techmin@ashoka.edu.in",
+    "interestTags": ["Tech", "Social"],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c46",
+    "name": "Environment Ministry",
+    "type": "ministry",
+    "description": "At Tarang, the Environment Ministry, we work towards creating a sustainable, clean and healthy living space within the Ashoka campus. We engage with the student body in an attempt to build a general consciousness about living sustainably, recycling, segregating waste and generating awareness about environmental concerns within and beyond the limits of the university.",
+    "contactEmail": "environment.ministry@ashoka.edu.in",
+    "interestTags": ["Environment", "Social"],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c47",
+    "name": "Jazbaa (Cultural Ministry)",
+    "type": "ministry",
+    "description": "Ashokan culture is a diverse set of ideas, identities, backgrounds, and interests. The Cultural Ministry, also known as Jazbaa, brings all these aspects together and makes the most out of it by ensuring a diverse and continuous set of engaging activities on campus. The ministry works on materializing the inclusivity in on-campus events by collaborating with the student body and over 30 clubs and societies on campus, along with building and maintaining an engagement with the world outside of Ashoka by encouraging intercollegiate events participation. It tries to ensure that all Ashokans find time to take breaks and replenish through socializing and investing in activities outside of the classroom. The Cultural Ministry, in essence, brings Ashoka to life.",
+    "contactEmail": "cultural.ministry@ashoka.edu.in",
+    "interestTags": ["Arts", "Social"],
+    "isActive": true
+  },
+  {
+    "tier": 4,
+    "id": "c48",
+    "name": "Ministry of Academic Affairs",
+    "type": "ministry",
+    "description": "The Ministry of Academic Affairs is concerned with overseeing and improving the academic experiences of all stakeholders at Ashoka University. It is envisioned to create an immersive academic culture among Ashokan students and promote academic-friendly spaces within the campus.\n\nOver the years, the MAA has worked on several projects with the Office of Academic Affairs, ACWB, Library team, and others to foster our goals of an academically involved and inclusive campus. For the current academic year, we hope to focus on inclusivity and improving academic infrastructure on campus, in terms of policies and academic resources available for students.",
+    "contactEmail": "academic.affairs@ashoka.edu.in",
+    "interestTags": ["Politics", "Law", "Social"],
+    "isActive": true
+  },
+  {
+    "tier": 1,
+    "id": "c49",
+    "name": "Ministry of Community & Well Being",
+    "type": "ministry",
+    "description": "The Ministry of Community Well-Being is one of the 7 ministries of Ashoka that works closely with the ACWB along with other bodies, offices and ministries in order to facilitate the well-being of every member in the Ashokan community by promoting inclusivity, ease of accessibility and fostering sensitivity and awareness. This ministry pursues projects in three areas: Infirmary and Sexual Health; Mental Health and Staff Welfare and Health.",
+    "contactEmail": "community.wellbeing@ashoka.edu.in",
+    "interestTags": ["Social"],
+    "isActive": true
+  },
+  {
+    "tier": 2,
+    "id": "c50",
+    "name": "Campus Life Ministry",
+    "type": "ministry",
+    "description": "The Campus Life Ministry is responsible for representing the diverse interests of students at Ashoka in the areas of residence life, dining, transport, and security. The Ministry strives to ensure that the everyday life of students on campus is pleasant and comfortable.",
+    "contactEmail": "campuslife.ministry@ashoka.edu.in",
+    "interestTags": ["Social"],
+    "isActive": true
+  },
+  {
+    "tier": 3,
+    "id": "c51",
+    "name": "Sports Ministry",
+    "type": "ministry",
+    "description": "The Sports Ministry in your university is dedicated to maintaining top-notch sporting facilities and fostering a positive sporting culture. We aim to encourage active participation in competitive sports and value commitment from every member, ensuring equal participation in decision-making processes. In addition to our core responsibilities, the ministry addresses various issues, including providing essential equipment to those in need, enhancing the quality of food for athletes, organizing sports-related extra-curriculars, and tackling toxicity in sports. We prioritize student input, believing in a collaborative approach to bridge the gap between the ministry and the student body.",
+    "contactEmail": "sports.ministry@ashoka.edu.in",
+    "interestTags": ["Sports", "Social"],
+    "isActive": true
   }
 ];
 
@@ -618,8 +688,10 @@ export const mockUserInterestTags = ["Arts", "Tech", "Social", "Music", "Politic
 
 export function getRecommendedClubs(userTags: string[], swipes: Record<string, "liked" | "dismissed">): Club[] {
   return mockClubs
-    .filter((c) => c.isActive && !swipes[c.id] && c.interestTags.some((t) => userTags.includes(t)))
+    .filter((c) => c.isActive && !swipes[c.id] && (c.id === "c45" || c.interestTags.some((t) => userTags.includes(t))))
     .sort((a, b) => {
+      if (a.id === "c45") return -1;
+      if (b.id === "c45") return 1;
       const scoreA = a.interestTags.filter((t) => userTags.includes(t)).length;
       const scoreB = b.interestTags.filter((t) => userTags.includes(t)).length;
       return scoreB - scoreA;

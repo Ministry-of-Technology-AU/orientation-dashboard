@@ -706,7 +706,7 @@ export default function HomePageClient({
                       ))}
                     </div>
                   ) : currentMarkdown ? (
-                    <div className="guide-content max-w-[70ch]">
+                    <div className="guide-content w-full">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
@@ -726,10 +726,10 @@ export default function HomePageClient({
                             <p className="text-[15.5px] sm:text-[16px] text-primary-blue/80 leading-normal mb-3.5">{children}</p>
                           ),
                           ul: ({ children }) => (
-                            <ul className="pl-2 space-y-0.5 mb-4">{children}</ul>
+                            <ul className="pl-2 space-y-0.5 mb-4 max-w-[70ch]">{children}</ul>
                           ),
                           ol: ({ children }) => (
-                            <ol className="pl-6 space-y-0.5 mb-4 list-decimal marker:text-primary-red marker:font-bold text-primary-blue/80 text-[15.5px]">{children}</ol>
+                            <ol className="pl-6 space-y-0.5 mb-4 list-decimal marker:text-primary-red marker:font-bold text-primary-blue/80 text-[15.5px] max-w-[70ch]">{children}</ol>
                           ),
                           li: ({ children, checked, className, ...props }: any) => {
                             const isCheckbox = checked !== undefined || className?.includes("task-list-item");

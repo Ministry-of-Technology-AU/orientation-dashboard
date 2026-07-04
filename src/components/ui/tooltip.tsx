@@ -9,8 +9,8 @@ function TooltipProvider({ ...props }: TooltipPrimitive.Provider.Props) {
   return <TooltipPrimitive.Provider {...props} />
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-  return <TooltipPrimitive.Root {...props} />
+function Tooltip({ disabled, ...props }: TooltipPrimitive.Root.Props & { disabled?: boolean }) {
+  return <TooltipPrimitive.Root open={disabled ? false : undefined} {...props} />
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {

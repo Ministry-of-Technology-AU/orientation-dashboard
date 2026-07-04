@@ -77,6 +77,11 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const haptic = useWebHaptics();
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(typeof window !== "undefined" && navigator.maxTouchPoints > 0);
+  }, []);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -90,7 +95,7 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
 
   const profileButton = (
     <div ref={ref} className={cn("relative", open && "z-50")}>
-      <Tooltip open={open ? false : undefined}>
+      <Tooltip open={open ? false : undefined} disabled={!isVertical || isTouch}>
         <TooltipTrigger
           render={
             <button
@@ -187,7 +192,7 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
                 order={tourOrder}
                 position={isVertical ? "right" : "top"}
               >
-                <Tooltip>
+                <Tooltip disabled={!isVertical || isTouch}>
                   <TooltipTrigger
                     render={
                       <Link

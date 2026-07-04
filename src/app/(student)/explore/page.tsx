@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import { Heart, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +21,8 @@ const INITIAL_SWIPES: Record<string, "liked" | "dismissed"> = {
 
 export default function ExplorePage() {
   const haptic = useWebHaptics();
-  const [swipes, setSwipes] = useState<Record<string, "liked" | "dismissed">>(INITIAL_SWIPES);
+  const [swipes, setSwipes] = useState<Record<string, "liked" | "dismissed">>({});
+  const [loading, setLoading] = useState(true);
   
   // Animation states
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
@@ -31,6 +32,14 @@ export default function ExplorePage() {
 
   // Motion values for drag tracking
   const x = useMotionValue(0);
+
+  const swipesRef = useRef(swipes);
+  const unsavedChangesRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    swipesRef.current = swipes;
+  }, [swipes]);
   
   // High-performance function-based transforms (GPU friendly and conditionally simplified for low-power/mobile devices)
   const rotate = useTransform(x, (val) => {
@@ -71,6 +80,26 @@ export default function ExplorePage() {
   }
 
   useEffect(() => {
+    async function initUser() {
+      try {
+        const res = await fetch("/api/user");
+        if (res.ok) {
+          const { user } = await res.json();
+          if (user?.organisationsLiked) {
+            const initialSwipes: Record<string, "liked" | "dismissed"> = {};
+            (user.organisationsLiked as string[]).forEach((id) => {
+              initialSwipes[id] = "liked";
+            });
+            setSwipes(initialSwipes);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user likes:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     setTimeout(() => {
       setIsClient(true);
       
@@ -86,28 +115,10 @@ export default function ExplorePage() {
       if (prefersReduced || isMobile || isLowSpec) {
         setIsLowPower(true);
       }
-
-      /*
-      const stored = localStorage.getItem("club_swipes");
-      if (stored) {
-        try {
-          setSwipes(JSON.parse(stored));
-        } catch {
-          // Ignore parsing errors
-        }
-      }
-      */
     }, 0);
-  }, []);
 
-  // Save swipes whenever they change
-  useEffect(() => {
-    /*
-    if (isClient) {
-      localStorage.setItem("club_swipes", JSON.stringify(swipes));
-    }
-    */
-  }, [swipes, isClient]);
+    initUser();
+  }, []);
 
   const recommended = getRecommendedClubs(mockUserInterestTags, swipes);
   const currentClub = recommended.length > 0 ? recommended[0] : null;
@@ -183,6 +194,51 @@ export default function ExplorePage() {
     }
   };
 
+  const flushSync = useCallback(async (opts?: { keepalive?: boolean }) => {
+    if (!unsavedChangesRef.current) return;
+    unsavedChangesRef.current = false;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    const likedIds = Object.keys(swipesRef.current).filter((key) => swipesRef.current[key] === "liked");
+    try {
+      await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organisationsLiked: likedIds }),
+        keepalive: opts?.keepalive,
+      });
+    } catch (err) {
+      console.error("Failed to sync likes to DB:", err);
+    }
+  }, []);
+
+  const triggerSync = useCallback(() => {
+    unsavedChangesRef.current = true;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      flushSync();
+    }, 10000);
+  }, [flushSync]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        flushSync({ keepalive: true });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", () => flushSync({ keepalive: true }));
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      flushSync();
+    };
+  }, [flushSync]);
+
   function handleLike(id: string) {
     haptic.trigger("success");
     markExploreUsed();
@@ -190,7 +246,12 @@ export default function ExplorePage() {
     heartIdCounter.current += 1;
     setFlyingHeart(heartIdCounter.current);
     setTimeout(() => {
-      setSwipes((s) => ({ ...s, [id]: "liked" }));
+      setSwipes((s) => {
+        const next = { ...s, [id]: "liked" as const };
+        swipesRef.current = next;
+        triggerSync();
+        return next;
+      });
     }, 150); // slight delay so animation starts before unmounting
   }
 
@@ -199,7 +260,7 @@ export default function ExplorePage() {
     markExploreUsed();
     setDirection('left');
     setTimeout(() => {
-      setSwipes((s) => ({ ...s, [id]: "dismissed" }));
+      setSwipes((s) => ({ ...s, [id]: "dismissed" as const }));
     }, 150);
   };
 
@@ -208,6 +269,8 @@ export default function ExplorePage() {
     setSwipes((s) => {
       const next = { ...s };
       delete next[id];
+      swipesRef.current = next;
+      triggerSync();
       return next;
     });
   }
@@ -235,7 +298,13 @@ export default function ExplorePage() {
   const likedClubs = mockClubs.filter((c) => swipes[c.id] === "liked");
   const visibleClubs = recommended.slice(0, isLowPower ? 1 : 2);
 
-  if (!isClient) return null;
+  if (!isClient || loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-neutral-50/50">
+        <div className="w-8 h-8 rounded-full border-2 border-primary-blue/20 border-t-primary-blue animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row h-full w-full overflow-hidden bg-neutral-50/50">

@@ -37,7 +37,7 @@ export async function PATCH(req: Request) {
     } catch (e) {
       return NextResponse.json({ error: "Invalid or missing JSON body" }, { status: 400 });
     }
-    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber, interests, hasConfirmedInternationalGuidelines } = body;
+    const { isOnboarded, isTourComplete, isInternational, petName, city, phoneNumber, interests, hasConfirmedInternationalGuidelines, organisationsLiked } = body;
 
     const updateData: any = {};
     if (typeof isOnboarded === "boolean") updateData.isOnboarded = isOnboarded;
@@ -49,6 +49,7 @@ export async function PATCH(req: Request) {
     if (typeof phoneNumber === "string") updateData.phoneNumber = phoneNumber;
     // interests is a JSON object: { question1: string[], question2: string[] }
     if (interests !== undefined && interests !== null) updateData.interests = interests;
+    if (organisationsLiked !== undefined && organisationsLiked !== null) updateData.organisationsLiked = organisationsLiked;
 
     // Set onboardedOn timestamp if onboarding is completed for the first time
     const existingUser = await prisma.user.findUnique({
