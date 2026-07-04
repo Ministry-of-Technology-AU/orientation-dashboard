@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -125,6 +126,7 @@ export default function HomePageClient({
   hasConfirmedInternationalGuidelines?: boolean;
 }) {
   const haptic = useWebHaptics();
+  const router = useRouter();
   const confettiRef = useRef<ConfettiApi | null>(null);
 
   const [selectedId, setSelectedId] = useState<string>(guides[0]?.id ?? "");
@@ -221,7 +223,8 @@ export default function HomePageClient({
     });
     if (!isOnboarded) {
       try {
-        if (localStorage.getItem("orientation-hub-onboarded") === "true") setPhase("done");
+        // DB is source of truth — clear stale local cache
+        localStorage.removeItem("orientation-hub-onboarded");
       } catch { }
     }
   }, [initialCompletedGuideIds, isOnboarded]);
@@ -233,6 +236,19 @@ export default function HomePageClient({
   }, [isOnboarded]);
 
   useEffect(() => {
+    if (!isOnboarded) {
+      try {
+        const rawAnswers = localStorage.getItem("onboarding_answers");
+        if (!rawAnswers) {
+          router.push("/onboarding");
+        }
+      } catch {
+        router.push("/onboarding");
+      }
+    }
+  }, [isOnboarded, router]);
+
+  useEffect(() => {
     try {
       const raw = localStorage.getItem("onboarding_answers");
       if (!raw) return;
@@ -242,10 +258,16 @@ export default function HomePageClient({
       const phoneNumber = typeof answers.phone === "string" ? answers.phone : undefined;
       const interests = { question1: Array.isArray(answers.interests) ? answers.interests : [], question2: Array.isArray(answers.hobbies) ? answers.hobbies : [] };
       fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ petName, city, phoneNumber, interests, isOnboarded: true }) })
-        .then(res => res.ok && localStorage.removeItem("onboarding_answers"))
+        .then(res => {
+          if (res.ok) {
+            localStorage.removeItem("onboarding_answers");
+            localStorage.setItem("orientation-hub-onboarded", "true");
+            router.refresh();
+          }
+        })
         .catch(err => console.error("Failed to sync onboarding answers:", err));
     } catch { }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (phase === "done") {

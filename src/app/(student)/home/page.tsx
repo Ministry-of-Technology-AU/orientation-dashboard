@@ -40,6 +40,7 @@ export default async function HomePage() {
     console.error("Error fetching user in HomePage:", error);
   }
 
+
   // Fetch guide metadata from Notion (single API call)
   // Falls back to empty array on error so the page still renders
   let guides: GuideMeta[] = [];

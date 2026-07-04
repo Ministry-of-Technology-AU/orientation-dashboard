@@ -23,6 +23,7 @@ export default function ExplorePage() {
   const haptic = useWebHaptics();
   const [swipes, setSwipes] = useState<Record<string, "liked" | "dismissed">>({});
   const [loading, setLoading] = useState(true);
+  const [userTags, setUserTags] = useState<string[]>(mockUserInterestTags);
   
   // Animation states
   const [direction, setDirection] = useState<'left' | 'right' | null>(null);
@@ -92,6 +93,16 @@ export default function ExplorePage() {
             });
             setSwipes(initialSwipes);
           }
+          // Derive user tags from onboarding interests + hobbies (both are string[])
+          if (user?.interests) {
+            const interests = user.interests as Record<string, string[]>;
+            const combined = [
+              ...(interests.interests ?? []),
+              ...(interests.hobbies ?? []),
+            ];
+            const deduped = [...new Set(combined)].filter(Boolean);
+            if (deduped.length > 0) setUserTags(deduped);
+          }
         }
       } catch (err) {
         console.error("Failed to load user likes:", err);
@@ -120,7 +131,7 @@ export default function ExplorePage() {
     initUser();
   }, []);
 
-  const recommended = getRecommendedClubs(mockUserInterestTags, swipes);
+  const recommended = getRecommendedClubs(userTags, swipes);
   const currentClub = recommended.length > 0 ? recommended[0] : null;
 
   // Reset x and haptic trackers when active card changes

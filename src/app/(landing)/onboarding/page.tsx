@@ -33,9 +33,13 @@ const QUESTIONS = [
     hint: "Pick as many as you like",
     type: "multiselect" as const,
     options: [
-      "Academics", "Research", "Sports", "Arts & Culture",
-      "Music", "Entrepreneurship", "Debates", "Social life",
-      "Theatre", "Photography", "Policy", "Journalism",
+      "Performing & Visual Art",
+      "Writing",
+      "Social Impact",
+      "Culture",
+      "Professional Development",
+      "Recreational Arts/Hobby",
+      "Collective",
     ],
   },
   {
