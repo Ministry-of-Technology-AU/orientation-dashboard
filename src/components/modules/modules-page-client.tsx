@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from "@/components/motion-primitives/dialog";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useWebHaptics } from "web-haptics/react";
+import { Info } from "lucide-react";
 
 const TABS: { label: string; value: ModuleStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -65,7 +66,8 @@ export function ModulesPageClient({ modules }: { modules: MockModule[] }) {
           transition={{ duration: 0.4 }}
         >
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Modules</h1>
-          <p className="text-sm text-gray-500 mb-6">Complete all mandatory modules to unlock your journey milestones.</p>
+          <p className="text-sm text-gray-500 mb-2">Complete all mandatory modules to unlock your journey milestones.</p>
+          <p className="text-sm text-gray-700 mb-6 bg-primary-red/10 p-4 rounded-xl flex items-center"><Info className="text-primary-red mr-3" />Please note that these modules are intended only as a guide to help you understand the key points. You are expected to carefully go through the Handbook available in the Updates and Uploads section, as it contains the complete and detailed information you will need.</p>
         </motion.div>
 
         <motion.div

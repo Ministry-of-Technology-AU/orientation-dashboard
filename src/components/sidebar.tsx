@@ -9,6 +9,7 @@ import { TourStep } from "@/components/guided-tour";
 import { handleSignOut } from "@/app/actions";
 import { useWebHaptics } from "web-haptics/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
   {
@@ -89,23 +90,31 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
 
   const profileButton = (
     <div ref={ref} className={cn("relative", open && "z-50")}>
-      <button
-        onClick={() => {
-          haptic.trigger("light");
-          setOpen((v) => !v);
-        }}
-        title="Profile"
-        className="cursor-pointer active:scale-95 transition-transform"
-      >
-        <div className={cn(
-          "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
-          pathname === "/profile" || open
-            ? "bg-primary-red shadow-sm"
-            : "bg-[#c8d9ec] hover:bg-primary-blue/20"
-        )}>
-          <User className={cn("w-5 h-5", pathname === "/profile" || open ? "text-white" : "text-primary-blue")} />
-        </div>
-      </button>
+      <Tooltip open={open ? false : undefined}>
+        <TooltipTrigger
+          render={
+            <button
+              onClick={() => {
+                haptic.trigger("light");
+                setOpen((v) => !v);
+              }}
+              className="cursor-pointer active:scale-95 transition-transform"
+            />
+          }
+        >
+          <div className={cn(
+            "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
+            pathname === "/profile" || open
+              ? "bg-primary-red shadow-sm"
+              : "bg-[#c8d9ec] hover:bg-primary-blue/20"
+          )}>
+            <User className={cn("w-5 h-5", pathname === "/profile" || open ? "text-white" : "text-primary-blue")} />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side={isVertical ? "right" : "top"}>
+          Profile
+        </TooltipContent>
+      </Tooltip>
 
       <AnimatePresence>
         {open && (
@@ -148,72 +157,82 @@ export function Sidebar({ orientation = "vertical" }: SidebarProps) {
   );
 
   return (
-    <div className={cn(
-      "flex w-full items-center",
-      isVertical ? "flex-col py-5 px-2 h-full gap-1" : "flex-row py-1 px-2 justify-between gap-1"
-    )}>
-      {isVertical && (
-        <TourStep
-          id="nav-profile"
-          title="Your Profile"
-          content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
-          order={1}
-          position="right"
-          className="mb-4"
-        >
-          {profileButton}
-        </TourStep>
-      )}
+    <TooltipProvider>
+      <div className={cn(
+        "flex w-full items-center",
+        isVertical ? "flex-col py-5 px-2 h-full gap-1" : "flex-row py-1 px-2 justify-between gap-1"
+      )}>
+        {isVertical && (
+          <TourStep
+            id="nav-profile"
+            title="Your Profile"
+            content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
+            order={1}
+            position="right"
+            className="mb-4"
+          >
+            {profileButton}
+          </TourStep>
+        )}
 
-      <nav className={cn("flex gap-1", isVertical ? "flex-col flex-1" : "flex-row flex-1 justify-around")}>
-        {navItems.map(({ icon: Icon, href, label, tourId, tourTitle, tourContent, tourOrder }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <TourStep
-              key={href}
-              id={tourId}
-              title={tourTitle}
-              content={tourContent}
-              order={tourOrder}
-              position={isVertical ? "right" : "top"}
-            >
-              <Link
-                href={href}
-                title={label}
-                onClick={() => haptic.trigger("selection")}
-                className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-all relative z-0 active:scale-95 cursor-pointer",
-                  isActive
-                    ? "text-white shadow-sm"
-                    : "text-primary-blue/55 hover:bg-primary-blue/10 hover:text-primary-blue"
-                )}
+        <nav className={cn("flex gap-1", isVertical ? "flex-col flex-1" : "flex-row flex-1 justify-around")}>
+          {navItems.map(({ icon: Icon, href, label, tourId, tourTitle, tourContent, tourOrder }) => {
+            const isActive = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <TourStep
+                key={href}
+                id={tourId}
+                title={tourTitle}
+                content={tourContent}
+                order={tourOrder}
+                position={isVertical ? "right" : "top"}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId={isVertical ? "activeSidebarTabVertical" : "activeSidebarTabHorizontal"}
-                    className="absolute inset-0 bg-primary-red rounded-xl -z-10"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <Icon className="w-4.5 h-4.5" />
-              </Link>
-            </TourStep>
-          );
-        })}
-      </nav>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        href={href}
+                        onClick={() => haptic.trigger("selection")}
+                        className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-all relative z-0 active:scale-95 cursor-pointer",
+                          isActive
+                            ? "text-white shadow-sm"
+                            : "text-primary-blue/55 hover:bg-primary-blue/10 hover:text-primary-blue"
+                        )}
+                      />
+                    }
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId={isVertical ? "activeSidebarTabVertical" : "activeSidebarTabHorizontal"}
+                        className="absolute inset-0 bg-primary-red rounded-xl -z-10"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <Icon className="w-4.5 h-4.5" />
+                  </TooltipTrigger>
+                  <TooltipContent side={isVertical ? "right" : "top"}>
+                    {label}
+                  </TooltipContent>
+                </Tooltip>
+              </TourStep>
+            );
+          })}
+        </nav>
 
-      {!isVertical && (
-        <TourStep
-          id="nav-profile-mobile"
-          title="Your Profile"
-          content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
-          order={1}
-          position="top"
-          className="ml-2"
-        >
-          {profileButton}
-        </TourStep>
-      )}
-    </div>
+        {!isVertical && (
+          <TourStep
+            id="nav-profile-mobile"
+            title="Your Profile"
+            content="View and edit your profile, track your achievements, and personalise your Ashoka journey."
+            order={1}
+            position="top"
+            className="ml-2"
+          >
+            {profileButton}
+          </TourStep>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
