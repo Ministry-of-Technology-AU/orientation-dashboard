@@ -221,13 +221,8 @@ export default function HomePageClient({
         }).catch(err => console.error("Failed to sync local guide completion:", err));
       }
     });
-    if (!isOnboarded) {
-      try {
-        // DB is source of truth — clear stale local cache
-        localStorage.removeItem("orientation-hub-onboarded");
-      } catch { }
-    }
-  }, [initialCompletedGuideIds, isOnboarded]);
+    // Remove the block that cleared "orientation-hub-onboarded" cache
+  }, [initialCompletedGuideIds]);
 
   useEffect(() => {
     if (isOnboarded) {
@@ -236,38 +231,49 @@ export default function HomePageClient({
   }, [isOnboarded]);
 
   useEffect(() => {
-    if (!isOnboarded) {
-      try {
-        const rawAnswers = localStorage.getItem("onboarding_answers");
-        if (!rawAnswers) {
-          router.push("/onboarding");
-        }
-      } catch {
-        router.push("/onboarding");
-      }
-    }
-  }, [isOnboarded, router]);
-
-  useEffect(() => {
     try {
-      const raw = localStorage.getItem("onboarding_answers");
-      if (!raw) return;
-      const answers: Record<string, string | string[]> = JSON.parse(raw);
+      const localOnboarded = localStorage.getItem("orientation-hub-onboarded") === "true";
+      
+      // Fast path: user is known to be onboarded (either from server or local cache)
+      if (isOnboarded || localOnboarded) {
+        // If server sent false due to caching but local says true, fix the phase silently
+        if (!isOnboarded && localOnboarded && phase === "splash") {
+          setPhase("done");
+        }
+        return;
+      }
+
+      // User is NOT onboarded according to server AND local cache.
+      const rawAnswers = localStorage.getItem("onboarding_answers");
+      
+      // If no answers exist, redirect them to complete onboarding.
+      if (!rawAnswers) {
+        router.push("/onboarding");
+        return;
+      }
+      
+      // If answers exist, it means they just finished the onboarding flow but the DB hasn't been updated yet.
+      const answers: Record<string, string | string[]> = JSON.parse(rawAnswers);
       const petName = typeof answers.name === "string" ? answers.name : undefined;
       const city = typeof answers.city === "string" ? answers.city : undefined;
       const phoneNumber = typeof answers.phone === "string" ? answers.phone : undefined;
       const interests = { question1: Array.isArray(answers.interests) ? answers.interests : [], question2: Array.isArray(answers.hobbies) ? answers.hobbies : [] };
+      
       fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ petName, city, phoneNumber, interests, isOnboarded: true }) })
         .then(res => {
           if (res.ok) {
             localStorage.removeItem("onboarding_answers");
             localStorage.setItem("orientation-hub-onboarded", "true");
+            setPhase("done");
             router.refresh();
           }
         })
         .catch(err => console.error("Failed to sync onboarding answers:", err));
-    } catch { }
-  }, [router]);
+        
+    } catch {
+      if (!isOnboarded) router.push("/onboarding");
+    }
+  }, [isOnboarded, router, phase]);
 
   useEffect(() => {
     if (phase === "done") {
@@ -343,9 +349,9 @@ export default function HomePageClient({
     if (idx < guides.length - 1) { const nid = guides[idx + 1].id; select(nid); fetchContent(nid); }
   }
 
-  async function handleNextGuide() { 
-    toggleComplete(selectedId); 
-    
+  async function handleNextGuide() {
+    toggleComplete(selectedId);
+
     // Sync the international confirmation if we are on the international guide
     const guide = guides.find(g => g.id === selectedId);
     if (guide?.title?.toLowerCase().includes("international")) {
@@ -363,7 +369,7 @@ export default function HomePageClient({
       }
     }
 
-    goNext(); 
+    goNext();
   }
 
   function scrollToReader() {
@@ -572,13 +578,13 @@ export default function HomePageClient({
               )}
             </AnimatePresence>
 
-            <div className="px-5 sm:px-7 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-primary-red/10 bg-white/40">
+            {/* <div className="px-5 sm:px-7 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-primary-red/10 bg-white/40">
               {[["Online Orientation", "11 Aug 2026"], ["O-Week begins", "18 Aug 2026"], ["Move-in", "Before 18 Aug 2026"]].map(([label, value]) => (
                 <span key={label} className="text-[11px] text-primary-blue/30 whitespace-nowrap">
                   {label}: <span className="text-primary-blue/55 font-medium">{value}</span>
                 </span>
               ))}
-            </div>
+            </div> */}
           </div>
         </motion.div>
 
