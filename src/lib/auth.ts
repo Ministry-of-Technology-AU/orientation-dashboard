@@ -21,7 +21,7 @@ function isAllowedEmail(email: string): boolean {
   if (ALLOWED_EMAILS.includes(e)) return true;
   return (
     e.endsWith("@ashoka.edu.in") &&
-    (e.includes("_ug2026") || e.includes("_ug25") || e.includes("_ug2023"))
+    (e.includes("_ug2026") || e.includes("_ugt2026") || e.includes("_ug25"))
   );
 }
 
