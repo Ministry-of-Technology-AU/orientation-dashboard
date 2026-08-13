@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
   experimental: {
     webpackBuildWorker: false,
   },
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default process.env.ANALYZE === "true"

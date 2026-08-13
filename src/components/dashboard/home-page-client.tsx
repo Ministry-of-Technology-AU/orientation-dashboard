@@ -233,7 +233,7 @@ export default function HomePageClient({
   useEffect(() => {
     try {
       const localOnboarded = localStorage.getItem("orientation-hub-onboarded") === "true";
-      
+
       // Fast path: user is known to be onboarded (either from server or local cache)
       if (isOnboarded || localOnboarded) {
         // If server sent false due to caching but local says true, fix the phase silently
@@ -245,20 +245,20 @@ export default function HomePageClient({
 
       // User is NOT onboarded according to server AND local cache.
       const rawAnswers = localStorage.getItem("onboarding_answers");
-      
+
       // If no answers exist, redirect them to complete onboarding.
       if (!rawAnswers) {
         router.push("/onboarding");
         return;
       }
-      
+
       // If answers exist, it means they just finished the onboarding flow but the DB hasn't been updated yet.
       const answers: Record<string, string | string[]> = JSON.parse(rawAnswers);
       const petName = typeof answers.name === "string" ? answers.name : undefined;
       const city = typeof answers.city === "string" ? answers.city : undefined;
       const phoneNumber = typeof answers.phone === "string" ? answers.phone : undefined;
       const interests = { question1: Array.isArray(answers.interests) ? answers.interests : [], question2: Array.isArray(answers.hobbies) ? answers.hobbies : [] };
-      
+
       fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ petName, city, phoneNumber, interests, isOnboarded: true }) })
         .then(res => {
           if (res.ok) {
@@ -269,7 +269,7 @@ export default function HomePageClient({
           }
         })
         .catch(err => console.error("Failed to sync onboarding answers:", err));
-        
+
     } catch {
       if (!isOnboarded) router.push("/onboarding");
     }
@@ -572,7 +572,7 @@ export default function HomePageClient({
                     <p className="text-[13.5px] leading-[1.8] italic text-center sm:text-left" style={{ fontFamily: "var(--font-display)", color: "rgba(10, 56, 100, 0.78)" }}>
                       &ldquo;Congratulations and Welcome to Ashoka University! You are about to begin an incredible journey, and it all starts here. Get ready to connect, explore, and grow as you prepare for success in your undergraduate journey. At Ashoka, you will find a community that inspires you to flourish and truly thrive. Let the adventure begin!&rdquo;
                     </p>
-                    <p className="text-primary-blue/35 text-[11px] mt-2 text-center sm:text-left">— Office of Student Affairs, Ashoka University &nbsp;·&nbsp; Batch of UG 2029</p>
+                    <p className="text-primary-blue/35 text-[11px] mt-2 text-center sm:text-left">— Office of Student Affairs, Ashoka University &nbsp;·&nbsp; Batch of UG 2030</p>
                   </div>
                 </motion.div>
               )}
